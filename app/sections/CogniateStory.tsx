@@ -25,7 +25,7 @@ const stories = [
   },
   {
     id: "insight",
-    icon: "/assets/story-lightbulb-bg.svg",
+    icon: "/assets/story-lightbulb-icon.svg",
     label: "INSIGHT",
     title: "Story 3",
     description:
@@ -40,7 +40,7 @@ export default function CogniateStory() {
   return (
     <section
       data-testid="cogniate-story-section"
-      className="relative w-full bg-bg-secondary overflow-hidden py-20 lg:py-32"
+      className="relative w-full bg-bg-secondary overflow-x-hidden py-20 lg:pt-32 lg:pb-52"
     >
       <div className="relative mx-auto max-w-[1330px] px-5 md:px-6">
         {/* Heading */}
@@ -52,8 +52,11 @@ export default function CogniateStory() {
 
         {/* === DESKTOP LAYOUT === */}
         <div className="hidden lg:block relative mt-16">
-          {/* Concentric circles background */}
-          <div className="relative mx-auto" style={{ width: 718, height: 635 }}>
+          {/* Concentric circles background - aspect ratio matches SVG viewBox 1718:635 */}
+          <div
+            className="relative mx-auto"
+            style={{ width: "100%", maxWidth: 1200, aspectRatio: "1718 / 635" }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/story-concentric-circles.svg"
@@ -62,10 +65,10 @@ export default function CogniateStory() {
               draggable={false}
             />
 
-            {/* Cogniate Logo - centered */}
+            {/* Cogniate Logo - centered on the circles */}
             <div
-              className="absolute left-1/2 top-[54%] -translate-x-1/2 -translate-y-1/2"
-              style={{ width: 154, height: 145 }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{ width: 130, height: 122 }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -76,8 +79,11 @@ export default function CogniateStory() {
               />
             </div>
 
-            {/* Warning Icon - bottom left */}
-            <div className="absolute" style={{ left: -120, bottom: -70 }}>
+            {/* Warning Icon - bottom left of circles */}
+            <div
+              className="absolute"
+              style={{ left: "18%", bottom: "-16%" }}
+            >
               <StoryIcon
                 src="/assets/story-warning-icon.svg"
                 alt="Problem"
@@ -86,12 +92,12 @@ export default function CogniateStory() {
                 onMouseEnter={() => setActiveStory("problem")}
                 onMouseLeave={() => setActiveStory(null)}
               />
-              {/* Tooltip - right of icon */}
+              {/* Tooltip - above-right of icon */}
               <div
-                className={`absolute left-[160px] top-1/2 -translate-y-1/2 w-[450px] z-20 transition-all duration-300 pointer-events-none ${
+                className={`absolute left-[80px] bottom-[120px] w-[450px] z-20 transition-all duration-300 pointer-events-none ${
                   activeStory === "problem"
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 -translate-x-2"
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-2"
                 }`}
               >
                 <StoryTooltip
@@ -105,10 +111,10 @@ export default function CogniateStory() {
               </div>
             </div>
 
-            {/* Flag Icon - top center */}
+            {/* Flag Icon - top center, just above the outer circle */}
             <div
-              className="absolute"
-              style={{ left: "50%", top: -20, transform: "translateX(-50%)" }}
+              className="absolute left-1/2 -translate-x-1/2"
+              style={{ top: "-14%" }}
             >
               <StoryIcon
                 src="/assets/story-flag-icon.svg"
@@ -136,10 +142,13 @@ export default function CogniateStory() {
               </div>
             </div>
 
-            {/* Lightbulb Icon - bottom right */}
-            <div className="absolute" style={{ right: -120, bottom: -70 }}>
+            {/* Lightbulb Icon - bottom right of circles */}
+            <div
+              className="absolute"
+              style={{ right: "18%", bottom: "-16%" }}
+            >
               <StoryIcon
-                src="/assets/story-lightbulb-bg.svg"
+                src="/assets/story-lightbulb-icon.svg"
                 alt="Insight"
                 size={120}
                 isActive={activeStory === "insight"}
