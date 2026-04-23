@@ -3,7 +3,7 @@ import path from "path";
 
 test("tooltip on warning icon hover", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 1080 });
-  await page.goto("http://localhost:3002", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.fonts.ready);
   await page.waitForTimeout(500);
 

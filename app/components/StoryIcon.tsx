@@ -30,6 +30,7 @@ export default function StoryIcon({
       onMouseLeave={onMouseLeave}
       onClick={onClick}
       aria-expanded={isActive}
+      aria-label={`${alt} story`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

@@ -3,7 +3,7 @@ import path from "path";
 
 test("capture cogniate story section - desktop 1728px", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 1080 });
-  await page.goto("http://localhost:3002", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.fonts.ready);
   await page.waitForTimeout(1000);
 
@@ -18,7 +18,7 @@ test("capture cogniate story section - desktop 1728px", async ({ page }) => {
 
 test("capture cogniate story section - mobile 375px", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto("http://localhost:3002", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.fonts.ready);
   await page.waitForTimeout(1000);
 
@@ -33,7 +33,7 @@ test("capture cogniate story section - mobile 375px", async ({ page }) => {
 
 test("capture cogniate story section - tablet 768px", async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
-  await page.goto("http://localhost:3002", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.fonts.ready);
   await page.waitForTimeout(1000);
 

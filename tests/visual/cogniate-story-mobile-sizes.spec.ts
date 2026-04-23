@@ -11,7 +11,7 @@ const viewports = [
 for (const vp of viewports) {
   test(`cogniate story - ${vp.name} (${vp.width}px)`, async ({ page }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
-    await page.goto("http://localhost:3002", { waitUntil: "networkidle" });
+    await page.goto("/", { waitUntil: "networkidle" });
     await page.waitForFunction(() => document.fonts.ready);
     await page.waitForTimeout(500);
 
@@ -26,7 +26,7 @@ for (const vp of viewports) {
 
   test(`cogniate story accordion - ${vp.name}`, async ({ page }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
-    await page.goto("http://localhost:3002", { waitUntil: "networkidle" });
+    await page.goto("/", { waitUntil: "networkidle" });
     await page.waitForFunction(() => document.fonts.ready);
     await page.waitForTimeout(500);
 
