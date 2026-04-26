@@ -26,7 +26,7 @@ type StandardCard = {
 type CardData = StandardCard | AccordionCardData;
 
 function isAccordionCard(card: CardData): card is AccordionCardData {
-  return "pills" in card;
+  return card.layout === "accordion";
 }
 
 /* ============================================
@@ -81,6 +81,7 @@ const cards: CardData[] = [
   {
     id: "publish",
     title: "Features, not friction.",
+    layout: "accordion" as const,
     glowColor: "rgba(252, 232, 158, 0.12)",
     pills: [
       {

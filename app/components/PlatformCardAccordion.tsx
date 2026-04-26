@@ -16,6 +16,7 @@ export interface PillData {
 export interface AccordionCardData {
   id: string;
   title: string;
+  layout: "accordion";
   pills: PillData[];
   glowColor: string;
   visuals: string[];
@@ -510,7 +511,7 @@ export default function PlatformCardAccordion({
         className="absolute inset-0 pointer-events-none rounded-[inherit] z-20"
         style={{
           boxShadow:
-            "inset 0px 1px 0px 0px rgba(255,255,255,0.1), 0px 0px 0px 1px rgba(255,255,255,0.06)",
+            "inset 0px 1px 0px 0px rgba(255,255,255,0.1), inset 0px 0px 0px 1px rgba(255,255,255,0.06)",
         }}
       />
     </div>
