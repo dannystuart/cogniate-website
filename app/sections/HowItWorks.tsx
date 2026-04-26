@@ -139,10 +139,10 @@ export default function HowItWorks() {
     <section
       ref={sectionRef}
       data-testid="how-it-works-section"
-      className="relative w-full bg-[#111112] overflow-hidden py-20 lg:py-32"
+      className="relative w-full bg-[#111112] overflow-hidden pt-20 pb-20 lg:pt-0 lg:pb-32"
     >
       {/* ===== BACKGROUND GRID LINES ===== */}
-      <div className="absolute inset-x-0 top-[100px] bottom-[60px] mx-auto max-w-[1554px] pointer-events-none">
+      <div className="absolute inset-x-0 top-[200px] lg:top-[260px] bottom-[60px] mx-auto max-w-[1554px] pointer-events-none">
         {/* Desktop grid */}
         <div className="hidden lg:flex justify-between h-full px-[40px]">
           {Array.from({ length: GRID_LINE_COUNT_DESKTOP }).map((_, i) => (
@@ -234,10 +234,10 @@ export default function HowItWorks() {
       </div>
 
       {/* ===== CONTENT ===== */}
-      <div className="relative z-10 mx-auto max-w-[1554px] px-5 md:px-6">
-        {/* HOW IT WORKS eyebrow */}
+      <div className="relative z-10 mx-auto max-w-[1554px] px-5 md:px-6 lg:pt-[290px]">
+        {/* HOW IT WORKS eyebrow — sits below the horizontal animated line */}
         <div
-          className="inline-flex items-center h-[52px] px-12 mb-12 lg:mb-16"
+          className="inline-flex items-center h-[52px] px-12 mb-8 lg:mb-16"
           style={{ backgroundColor: "rgba(211,204,255,0.05)" }}
         >
           <span className="text-[16px] font-medium tracking-[4.8px] text-white/80">
