@@ -1,6 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const cards = [
   {
@@ -40,6 +44,96 @@ const GRID_LINE_COUNT_MOBILE = 5;
 
 export default function HowItWorks() {
   const sectionRef = useRef<HTMLElement>(null);
+  const vLineRef = useRef<HTMLDivElement>(null);
+  const vGlowRef = useRef<HTMLDivElement>(null);
+  const hGlowLeftRef = useRef<HTMLDivElement>(null);
+  const hGlowRightRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const hasTriggeredRef = useRef(false);
+
+  const buildTimeline = useCallback(() => {
+    const vGlow = vGlowRef.current;
+    const hGlowL = hGlowLeftRef.current;
+    const hGlowR = hGlowRightRef.current;
+    const vLine = vLineRef.current;
+
+    if (!vGlow || !hGlowL || !hGlowR || !vLine) return;
+
+    if (timelineRef.current) {
+      timelineRef.current.kill();
+    }
+
+    const vLineHeight = vLine.offsetHeight;
+
+    // Reset state
+    gsap.set(vGlow, { top: "-120px", opacity: 0 });
+    gsap.set(hGlowL, { opacity: 0, width: 0 });
+    gsap.set(hGlowR, { opacity: 0, width: 0 });
+
+    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.0 });
+    timelineRef.current = tl;
+
+    // Fade in the vertical glow
+    tl.to(vGlow, { opacity: 1, duration: 0.3 });
+
+    // Move glow down the vertical line
+    tl.to(vGlow, {
+      top: vLineHeight - 40,
+      duration: 1.8,
+      ease: "power2.inOut",
+    });
+
+    // Fade out vertical glow at bottom
+    tl.to(vGlow, { opacity: 0, duration: 0.3 }, "-=0.3");
+
+    // Horizontal glows spread from center outward
+    tl.set(hGlowL, { opacity: 1, width: 0 });
+    tl.set(hGlowR, { opacity: 1, width: 0 });
+
+    tl.to(hGlowL, {
+      width: "50%",
+      duration: 1.2,
+      ease: "power2.out",
+    });
+    tl.to(
+      hGlowR,
+      { width: "50%", duration: 1.2, ease: "power2.out" },
+      "<"
+    );
+
+    // Fade out horizontal glows
+    tl.to([hGlowL, hGlowR], { opacity: 0, duration: 0.6 }, "-=0.3");
+
+    // Reset vertical glow position
+    tl.set(vGlow, { top: "-120px" });
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: "top 80%",
+      onEnter: () => {
+        if (!hasTriggeredRef.current) {
+          hasTriggeredRef.current = true;
+          buildTimeline();
+        }
+      },
+    });
+
+    const handleResize = () => {
+      if (hasTriggeredRef.current) buildTimeline();
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      trigger.kill();
+      window.removeEventListener("resize", handleResize);
+      if (timelineRef.current) timelineRef.current.kill();
+    };
+  }, [buildTimeline]);
 
   return (
     <section
@@ -77,7 +171,67 @@ export default function HowItWorks() {
         </div>
       </div>
 
-      {/* ===== ANIMATED PURPLE GRADIENT LINES (placeholder — Task 3) ===== */}
+      {/* ===== ANIMATED PURPLE GRADIENT LINES ===== */}
+      <div className="absolute inset-x-0 top-0 bottom-0 mx-auto max-w-[1554px] pointer-events-none z-[5]">
+        {/* Vertical base line — center top */}
+        <div
+          ref={vLineRef}
+          className="absolute left-1/2 -translate-x-1/2 top-0 overflow-hidden"
+          style={{ width: "3px", height: "260px" }}
+        >
+          {/* Base dim line */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(174,180,255,0.06)] to-[rgba(174,180,255,0.12)]" />
+          {/* Animated glow */}
+          <div
+            ref={vGlowRef}
+            className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+            style={{
+              width: "3px",
+              height: "120px",
+              background:
+                "linear-gradient(to bottom, transparent 0%, rgba(174,180,255,0.15) 20%, rgba(174,180,255,0.8) 50%, rgba(174,180,255,0.15) 80%, transparent 100%)",
+              boxShadow:
+                "0 0 12px 4px rgba(174,180,255,0.4), 0 0 30px 8px rgba(174,180,255,0.2)",
+              opacity: 0,
+            }}
+          />
+        </div>
+
+        {/* Horizontal base lines — at bottom of vertical line */}
+        <div
+          className="hidden lg:block absolute left-0 right-0"
+          style={{ top: "260px", height: "3px" }}
+        >
+          {/* Base dim line — full width */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[rgba(174,180,255,0.04)] via-[rgba(174,180,255,0.1)] to-[rgba(174,180,255,0.04)]" />
+          {/* Left-spreading glow */}
+          <div
+            ref={hGlowLeftRef}
+            className="absolute right-1/2 top-0 h-full pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to left, rgba(174,180,255,0.8), rgba(174,180,255,0.2) 40%, transparent 100%)",
+              boxShadow:
+                "0 0 12px 4px rgba(174,180,255,0.3), 0 0 30px 8px rgba(174,180,255,0.15)",
+              width: 0,
+              opacity: 0,
+            }}
+          />
+          {/* Right-spreading glow */}
+          <div
+            ref={hGlowRightRef}
+            className="absolute left-1/2 top-0 h-full pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to right, rgba(174,180,255,0.8), rgba(174,180,255,0.2) 40%, transparent 100%)",
+              boxShadow:
+                "0 0 12px 4px rgba(174,180,255,0.3), 0 0 30px 8px rgba(174,180,255,0.15)",
+              width: 0,
+              opacity: 0,
+            }}
+          />
+        </div>
+      </div>
 
       {/* ===== CONTENT ===== */}
       <div className="relative z-10 mx-auto max-w-[1554px] px-5 md:px-6">
