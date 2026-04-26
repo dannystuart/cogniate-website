@@ -378,7 +378,7 @@ export default function PlatformCardAccordion({
         className="relative z-10 flex flex-col lg:flex-row w-full"
       >
         {/* Left column: title + pills */}
-        <div className="relative shrink-0 w-full lg:w-[499px] px-6 py-8 lg:px-[60px] xl:px-[80px] lg:py-[40px]">
+        <div className="relative w-full lg:w-1/2 px-6 py-8 lg:px-[60px] xl:px-[80px] lg:py-[40px]">
           {/* Section title */}
           <p className="landscape-heading-gradient font-semibold text-[28px] lg:text-[36px] xl:text-[40px] leading-[1.1] tracking-[-0.04em] mb-8 lg:mb-10">
             {card.title}
@@ -440,7 +440,7 @@ export default function PlatformCardAccordion({
         </div>
 
         {/* Right column: visual panel */}
-        <div className="relative z-10 w-full lg:flex-1 overflow-hidden rounded-[20px] lg:rounded-l-none min-h-[300px] lg:min-h-0">
+        <div className="relative z-10 w-full lg:w-1/2 overflow-hidden rounded-[20px] lg:rounded-l-none min-h-[300px] lg:min-h-0">
           {/* Visual background */}
           <div className="absolute inset-0 bg-[#17161b]" />
 
