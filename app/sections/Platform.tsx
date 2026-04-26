@@ -4,14 +4,36 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import PlatformCardAccordion, { type AccordionCardData } from "../components/PlatformCardAccordion";
 
 gsap.registerPlugin(ScrollTrigger);
+
+/* ============================================
+   TYPES
+   ============================================ */
+
+type StandardCard = {
+  id: string;
+  title: string;
+  subtitle: string;
+  trademark: string;
+  description: string;
+  features: { label: string; description: string }[];
+  layout: "content-left" | "content-right";
+  glowColor: string;
+};
+
+type CardData = StandardCard | AccordionCardData;
+
+function isAccordionCard(card: CardData): card is AccordionCardData {
+  return "pills" in card;
+}
 
 /* ============================================
    DATA
    ============================================ */
 
-const cards = [
+const cards: CardData[] = [
   {
     id: "create",
     title: "Create",
@@ -32,6 +54,7 @@ const cards = [
       },
     ],
     layout: "content-left" as const,
+    glowColor: "rgba(250, 103, 124, 0.15)",
   },
   {
     id: "design",
@@ -53,27 +76,41 @@ const cards = [
       },
     ],
     layout: "content-right" as const,
+    glowColor: "rgba(183, 139, 249, 0.15)",
   },
   {
     id: "publish",
-    title: "Publish",
-    subtitle: "with Nexus",
-    trademark: "\u00AE",
-    description:
-      "Deploy to any LMS or share via link. Built-in analytics and automatic content updates keep your courses current and effective.",
-    features: [
+    title: "Features, not friction.",
+    glowColor: "rgba(252, 232, 158, 0.12)",
+    pills: [
       {
-        label: "One-click deploy",
+        label: "Course Editor",
         description:
-          "Publish directly to any LMS with SCORM, xAPI, or cmi5 support. Or share a simple link for instant access.",
+          "A powerful editing experience that brings your course to life. Customize every detail with professional tools.",
       },
       {
-        label: "Always current",
+        label: "Analytics",
         description:
-          "Automatic content updates keep your courses fresh. Built-in analytics show what\u2019s working and what needs attention.",
+          "Track learner progress and engagement with real-time dashboards. Understand what works and optimize.",
+      },
+      {
+        label: "Integrations",
+        description:
+          "Connect seamlessly with your existing LMS, HR systems, and collaboration tools out of the box.",
+      },
+      {
+        label: "Collaboration",
+        description:
+          "Work together in real-time with your team. Review, comment, and iterate on course content together.",
       },
     ],
-    layout: "content-left" as const,
+    visuals: [
+      "/assets/platform-card-gradient.png",
+      "/assets/platform-card-gradient.png",
+      "/assets/platform-card-gradient.png",
+      "/assets/platform-card-gradient.png",
+    ],
+    coverImage: "/assets/platform-card-gradient.png",
   },
 ];
 
@@ -132,7 +169,7 @@ function FeatureBlock({
 function PlatformCard({
   card,
 }: {
-  card: (typeof cards)[number];
+  card: StandardCard;
 }) {
   const isLeft = card.layout === "content-left";
 
@@ -150,21 +187,41 @@ function PlatformCard({
         className="absolute inset-0 bg-[#141318] pointer-events-none rounded-[20px]"
       />
 
+      {/* Decorative vertical lines — 7 evenly-spaced subtle lines */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none overflow-hidden rounded-[20px]"
+      >
+        {[44, 54, 64, 74, 84, 94, 104].map((pct) => (
+          <div
+            key={pct}
+            className="absolute top-0 h-[140%] -translate-y-[15%]"
+            style={{
+              left: `${isLeft ? pct : 100 - pct}%`,
+              width: "1px",
+              background:
+                "linear-gradient(to bottom, transparent, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent)",
+            }}
+          />
+        ))}
+      </div>
+
       {/* Decorative ellipse glow */}
       <div
         aria-hidden
-        className="absolute pointer-events-none hidden lg:block"
-        style={{
-          width: "1200px",
-          height: "700px",
-          right: isLeft ? "-200px" : "auto",
-          left: isLeft ? "auto" : "-200px",
-          top: "100px",
-          background:
-            "radial-gradient(ellipse at center, rgba(100,50,150,0.12) 0%, transparent 70%)",
-          transform: "rotate(-7deg)",
-        }}
-      />
+        className="absolute pointer-events-none overflow-hidden inset-0 rounded-[20px]"
+      >
+        <div
+          className="absolute"
+          style={{
+            width: "94%",
+            height: "118%",
+            [isLeft ? "right" : "left"]: "-10%",
+            bottom: "-60%",
+            background: `radial-gradient(ellipse at center, ${card.glowColor} 0%, transparent 65%)`,
+          }}
+        />
+      </div>
 
       {/* Content side */}
       <div
@@ -204,15 +261,16 @@ function PlatformCard({
         </div>
       </div>
 
-      {/* Placeholder side (will be SVG / video later) */}
+      {/* Placeholder side — extends to card edge, clipped by card border-radius */}
       <div
-        className={`relative z-10 w-full lg:flex-1 rounded-[20px] overflow-hidden ${
-          !isLeft ? "lg:order-1" : ""
+        className={`relative z-10 w-full lg:flex-1 overflow-hidden rounded-[20px] ${
+          isLeft
+            ? "lg:rounded-r-none lg:-mr-[60px] xl:-mr-[80px]"
+            : "lg:rounded-l-none lg:-ml-[60px] xl:-ml-[80px] lg:order-1"
         }`}
         style={{
           height: "clamp(240px, 30vw, 477px)",
           background: "#24202c",
-          border: "0.5px solid rgba(223,223,223,0.2)",
         }}
       >
         <Image
@@ -277,7 +335,13 @@ export default function Platform() {
       const mm = gsap.matchMedia();
 
       mm.add("(min-width: 1024px)", () => {
-        // Set initial state for all cards after the first
+        // Card 1: offset from viewport-center to sit below the title
+        const titleBottom = title.getBoundingClientRect().bottom;
+        const card1Rect = cardEls[0].getBoundingClientRect();
+        const card1Offset = titleBottom + 30 - card1Rect.top;
+        gsap.set(cardEls[0], { y: card1Offset });
+
+        // Cards 2+: hidden below viewport, will animate to center (y: 0)
         cardEls.forEach((card, i) => {
           if (i > 0) {
             gsap.set(card, { y: "110%", scale: 0.92, opacity: 0 });
@@ -293,7 +357,16 @@ export default function Platform() {
           },
         });
 
+        // Scroll the title out of view first to make room for cards
+        tl.to(title, {
+          y: "-100%",
+          opacity: 0,
+          duration: 0.3,
+          ease: "none",
+        }, 0);
+
         // Build N-1 transition segments
+        // Each segment is self-contained: enter completes before next exit starts
         const transitionCount = cardEls.length - 1;
         const segmentDuration = 1;
 
@@ -302,30 +375,30 @@ export default function Platform() {
           const enterCard = cardEls[i + 1];
           const segmentStart = i * segmentDuration;
 
-          // Current card scales down and moves up
+          // Current card scales down and moves up (full segment)
           tl.to(
             exitCard,
             {
               y: "-25%",
               scale: 0.85,
               opacity: 0,
-              duration: segmentDuration,
+              duration: segmentDuration * 0.7,
               ease: "none",
             },
             segmentStart
           );
 
-          // Next card rises into position (overlapping with exit)
+          // Next card rises in — starts early, finishes well before segment ends
           tl.to(
             enterCard,
             {
               y: "0%",
               scale: 1,
               opacity: 1,
-              duration: segmentDuration,
+              duration: segmentDuration * 0.5,
               ease: "none",
             },
-            segmentStart + segmentDuration * 0.4
+            segmentStart + segmentDuration * 0.25
           );
         }
       });
@@ -379,7 +452,7 @@ export default function Platform() {
         {/* ===== SECTION TITLE ===== */}
         <h2
           ref={titleRef}
-          className="landscape-heading-gradient relative z-10 text-center font-semibold tracking-[-0.04em] text-[32px] md:text-[48px] lg:text-[56px] xl:text-[64px] leading-[1.1] mt-12 lg:mt-[100px] xl:mt-[120px] max-w-[900px] xl:max-w-[1306px] px-6"
+          className="landscape-heading-gradient relative z-10 text-center font-semibold tracking-[-0.04em] text-[32px] md:text-[48px] lg:text-[56px] xl:text-[64px] leading-[1.1] mt-12 lg:mt-[60px] xl:mt-[80px] max-w-[900px] xl:max-w-[1306px] px-6"
         >
           AI-native course authoring.
           <br />
@@ -387,14 +460,19 @@ export default function Platform() {
         </h2>
 
         {/* ===== CARDS CONTAINER ===== */}
-        <div className="relative z-10 w-full max-w-[1301px] mx-auto px-5 lg:px-6 mt-8 lg:mt-[50px] xl:mt-[60px] flex flex-col gap-8 lg:gap-0 lg:flex-1">
+        {/* Desktop: absolute inset-0 spans full viewport for centering. Mobile: normal flow. */}
+        <div className="relative z-10 w-full max-w-[1301px] mx-auto px-5 mt-8 flex flex-col gap-8 lg:absolute lg:inset-0 lg:max-w-none lg:mx-0 lg:mt-0 lg:px-0 lg:gap-0">
           {cards.map((card, i) => (
             <div
               key={card.id}
               ref={setCardRef(i)}
-              className="lg:absolute lg:inset-x-6 lg:top-0"
+              className="lg:absolute lg:inset-0 lg:my-auto lg:h-fit lg:max-w-[1301px] lg:mx-auto lg:px-6"
             >
-              <PlatformCard card={card} />
+              {isAccordionCard(card) ? (
+                <PlatformCardAccordion card={card} />
+              ) : (
+                <PlatformCard card={card} />
+              )}
             </div>
           ))}
         </div>
