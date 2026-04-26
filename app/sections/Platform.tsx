@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -244,13 +244,10 @@ export default function Platform() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  /** Stable callback ref setter for card elements */
-  const setCardRef = useCallback(
+  const setCardRef =
     (index: number) => (el: HTMLDivElement | null) => {
       cardRefs.current[index] = el;
-    },
-    []
-  );
+    };
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -363,11 +360,13 @@ export default function Platform() {
     <section
       ref={sectionRef}
       data-testid="platform-section"
-      className="relative bg-bg-secondary lg:h-[450vh]"
+      className="relative bg-bg-secondary"
     >
+      {/* Dynamic height based on card count — only applied on desktop */}
+      <style>{`@media (min-width: 1024px) { [data-testid="platform-section"] { height: ${cards.length * 150}vh; } }`}</style>
       <div className="lg:sticky lg:top-0 lg:h-screen flex flex-col items-center overflow-hidden py-16 lg:py-0">
         {/* ===== GRADIENT BACKGROUND ===== */}
-        <div className="absolute inset-0 lg:inset-5 z-0 lg:rounded-[50px] overflow-hidden">
+        <div className="absolute inset-0 lg:inset-5 z-0 lg:rounded-[50px] overflow-hidden opacity-60 lg:opacity-100">
           <Image
             src="/assets/platform-gradient-bg.png"
             alt=""
