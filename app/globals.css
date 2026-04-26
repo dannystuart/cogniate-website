@@ -84,22 +84,7 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* ============================================
-   COGNIATE STORY SECTION
-   ============================================ */
-
-.story-heading-gradient {
-  background: radial-gradient(
-    ellipse 100% 500% at 50% 50%,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(212, 209, 218, 0.75) 25%,
-    rgba(169, 163, 180, 0.5) 50%,
-    rgba(82, 71, 105, 0) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+/* story-heading-gradient removed — CogniateStory reuses landscape-heading-gradient */
 
 /* ============================================
    GLOW LINE ANIMATION
@@ -113,4 +98,228 @@ body {
 
 .scroll-text {
   transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ============================================
+   FEATURE PILLS (Accordion) — Osmo Supply
+   ============================================ */
+
+/* --- Pill item backgrounds --- */
+.feature-pills__item-bg {
+  z-index: 0;
+  background-color: #212027;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+/* --- Trigger button --- */
+.feature-pills__item-button {
+  z-index: 1;
+  gap: 0.625em;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 1em 1.25em;
+  position: relative;
+  color: inherit;
+  font-family: inherit;
+}
+
+.feature-pills__item-label {
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  flex: none;
+  font-size: 20px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+/* --- +/x icon --- */
+.feature-pills__item-icon {
+  aspect-ratio: 1;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  position: relative;
+  box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, 0.25);
+}
+
+.feature-pills__item-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.1));
+  pointer-events: none;
+}
+
+.feature-pills__item-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.05),
+    inset 0px -1px 0px 0px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.feature-pills__item-icon-bar {
+  background-color: #fff;
+  flex: none;
+  width: 1px;
+  height: 50%;
+  position: absolute;
+}
+
+.feature-pills__item-icon-bar.is--horizontal {
+  width: 50%;
+  height: 1px;
+}
+
+/* --- Expandable content area --- */
+.feature-pills__item-content {
+  z-index: 2;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.feature-pills__item-mask {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.feature-pills__item-inner {
+  max-width: var(--content-item-expanded);
+  flex-flow: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: max-content;
+  padding: 1.25em 1.5em 1.5em;
+  display: flex;
+}
+
+.feature-pills__item-body {
+  margin-bottom: 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.feature-pills__item-body-span {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(244, 238, 255, 0.8);
+  line-height: 20px;
+}
+
+/* --- Visual panel --- */
+.feature-pills__visual-item {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.feature-pills__visual-img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Close button --- */
+.feature-pills__close-button {
+  aspect-ratio: 1;
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 10em;
+  justify-content: center;
+  align-items: center;
+  width: 2em;
+  padding: 8px;
+  display: flex;
+  position: relative;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* --- Expanded width variable --- */
+[data-feature-pills-init] {
+  --content-item-expanded: 28em;
+}
+
+@media screen and (max-width: 1023px) {
+  [data-feature-pills-init] {
+    --content-item-expanded: 100%;
+  }
+}
+
+/* --- State transitions (CSS-driven opacity) --- */
+[data-feature-pills-button] {
+  opacity: 1;
+  transition: opacity 400ms ease-in-out 300ms;
+}
+
+[data-feature-pills-inner] {
+  opacity: 0;
+  transition: opacity 300ms ease-in-out 0ms;
+}
+
+[data-feature-pills-visual] {
+  opacity: 0;
+  transition: opacity 350ms ease-in-out;
+}
+
+[data-feature-pills-cover] {
+  opacity: 1;
+  transition: opacity 350ms ease-in-out;
+}
+
+/* Active pill */
+[data-feature-pills-item][data-active="true"] [data-feature-pills-button] {
+  opacity: 0;
+  transition: opacity 50ms ease-in-out 0ms;
+}
+
+[data-feature-pills-item][data-active="true"] [data-feature-pills-inner] {
+  opacity: 1;
+}
+
+/* Active visual */
+[data-feature-pills-visual][data-active="true"] {
+  opacity: 1;
+}
+
+[data-feature-pills-cover][data-active="false"] {
+  opacity: 0;
+}
+
+/* Close button animation */
+[data-feature-pills-close] {
+  transform: scale(0) rotate(135deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 500ms cubic-bezier(0.7, 0, 0.3, 1);
+}
+
+[data-feature-pills-active="true"] [data-feature-pills-close] {
+  transform: scale(1) rotate(45deg);
+  opacity: 1;
+  pointer-events: auto;
 }
