@@ -12,6 +12,7 @@ import TypeScale from "./preview/TypeScale";
 import GradientSamples from "./preview/GradientSamples";
 import ComponentExcerpts from "./preview/ComponentExcerpts";
 import PreviewSection from "./preview/PreviewSection";
+import ComponentLibrary from "./library/ComponentLibrary";
 
 const GROUPS: { id: TokenGroup; title: string }[] = [
   { id: "colors", title: "Colors" },
@@ -97,8 +98,11 @@ export default function DesignSystemClient() {
           <PreviewSection title="Gradients">
             <GradientSamples />
           </PreviewSection>
-          <PreviewSection title="Components">
+          <PreviewSection title="Cascade Preview">
             <ComponentExcerpts />
+          </PreviewSection>
+          <PreviewSection title="Component Library">
+            <ComponentLibrary />
           </PreviewSection>
         </section>
       </main>
