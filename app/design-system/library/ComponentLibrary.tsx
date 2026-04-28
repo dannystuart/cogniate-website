@@ -9,27 +9,27 @@ import PlatformCardAccordion, { type AccordionCardData } from "../../components/
 import LibraryCard from "./LibraryCard";
 import VariantTile from "./VariantTile";
 
-export default function ComponentLibrary() {
-  const sampleAccordionCard: AccordionCardData = {
-    id: "library-sample",
-    title: "Sample accordion card",
-    layout: "accordion",
-    glowColor: "rgba(252, 232, 158, 0.12)",
-    pills: [
-      { label: "Pill one", description: "First pill description for the accordion showcase." },
-      { label: "Pill two", description: "Second pill description for the accordion showcase." },
-      { label: "Pill three", description: "Third pill description for the accordion showcase." },
-      { label: "Pill four", description: "Fourth pill description for the accordion showcase." },
-    ],
-    visuals: [
-      "/assets/platform-card-gradient.png",
-      "/assets/platform-card-gradient.png",
-      "/assets/platform-card-gradient.png",
-      "/assets/platform-card-gradient.png",
-    ],
-    coverImage: "/assets/platform-card-gradient.png",
-  };
+const SAMPLE_ACCORDION_CARD: AccordionCardData = {
+  id: "library-sample",
+  title: "Sample accordion card",
+  layout: "accordion",
+  glowColor: "rgba(252, 232, 158, 0.12)",
+  pills: [
+    { label: "Pill one", description: "First pill description for the accordion showcase." },
+    { label: "Pill two", description: "Second pill description for the accordion showcase." },
+    { label: "Pill three", description: "Third pill description for the accordion showcase." },
+    { label: "Pill four", description: "Fourth pill description for the accordion showcase." },
+  ],
+  visuals: [
+    "/assets/platform-card-gradient.png",
+    "/assets/platform-card-gradient.png",
+    "/assets/platform-card-gradient.png",
+    "/assets/platform-card-gradient.png",
+  ],
+  coverImage: "/assets/platform-card-gradient.png",
+};
 
+export default function ComponentLibrary() {
   return (
     <div className="flex flex-col gap-6">
       <LibraryCard title="EyebrowBadge" importPath="app/components/EyebrowBadge.tsx">
@@ -111,7 +111,7 @@ export default function ComponentLibrary() {
       <LibraryCard title="PlatformCardAccordion" importPath="app/components/PlatformCardAccordion.tsx">
         <VariantTile label="Default" fullWidth>
           <div className="w-full min-h-[480px]">
-            <PlatformCardAccordion card={sampleAccordionCard} />
+            <PlatformCardAccordion card={SAMPLE_ACCORDION_CARD} />
           </div>
         </VariantTile>
       </LibraryCard>
