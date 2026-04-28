@@ -69,7 +69,7 @@ export default function DesignSystemClient() {
           </ControlGroup>
         ))}
         <div className="mt-6 flex flex-col gap-2">
-          <div className="text-xs text-text-secondary">{changed} of {Object.keys(state).length} tokens changed</div>
+          <div className="text-xs text-text-secondary">{changed} of {BASELINE_TOKENS.length} tokens changed</div>
           <button
             type="button"
             onClick={onCopy}
