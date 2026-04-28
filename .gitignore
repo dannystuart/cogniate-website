@@ -21,6 +21,9 @@ tests/visual/*.svg
 # local agent config
 .claude/
 
+# git worktrees
+.worktrees/
+
 # next.js
 /.next/
 /out/
