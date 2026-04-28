@@ -103,11 +103,11 @@ body {
 .heading-gradient {
   background: radial-gradient(
     ellipse 100% 120% at 50% 50%,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(212, 209, 218, 0.875) 25%,
-    rgba(169, 163, 180, 0.75) 50%,
-    rgba(125, 117, 143, 0.625) 75%,
-    rgba(82, 71, 105, 0.5) 100%
+    var(--heading-gradient-stop-1) 0%,
+    var(--heading-gradient-stop-2) 25%,
+    var(--heading-gradient-stop-3) 50%,
+    var(--heading-gradient-stop-4) 75%,
+    var(--heading-gradient-stop-5) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -121,10 +121,10 @@ body {
 .landscape-heading-gradient {
   background: radial-gradient(
     ellipse 100% 500% at 50% 50%,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(212, 209, 218, 0.75) 25%,
-    rgba(169, 163, 180, 0.5) 50%,
-    rgba(82, 71, 105, 0) 100%
+    var(--landscape-gradient-stop-1) 0%,
+    var(--landscape-gradient-stop-2) 25%,
+    var(--landscape-gradient-stop-3) 50%,
+    var(--landscape-gradient-stop-4) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -140,9 +140,9 @@ body {
 .benefits-italic-gradient {
   background: radial-gradient(
     ellipse 100% 100% at 50% 50%,
-    rgba(255, 255, 255, 0.8) 0%,
-    rgba(220, 200, 245, 0.8) 50%,
-    rgba(184, 145, 234, 0.8) 100%
+    var(--benefits-italic-gradient-stop-1) 0%,
+    var(--benefits-italic-gradient-stop-2) 50%,
+    var(--benefits-italic-gradient-stop-3) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -156,10 +156,10 @@ body {
 .footer-heading-gradient {
   background: radial-gradient(
     ellipse 100% 120% at 50% 50%,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(212, 209, 218, 0.75) 25%,
-    rgba(169, 163, 180, 0.5) 50%,
-    rgba(82, 71, 105, 0) 100%
+    var(--footer-gradient-stop-1) 0%,
+    var(--footer-gradient-stop-2) 25%,
+    var(--footer-gradient-stop-3) 50%,
+    var(--footer-gradient-stop-4) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
