@@ -12,6 +12,14 @@
 
 # testing
 /coverage
+playwright-report/
+test-results/
+tests/visual/*.png
+!tests/visual/cogniate-story-*.png
+tests/visual/*.svg
+
+# local agent config
+.claude/
 
 # next.js
 /.next/
