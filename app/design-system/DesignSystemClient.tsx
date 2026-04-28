@@ -20,7 +20,7 @@ export default function DesignSystemClient() {
   useEffect(() => setHydrated(true), []);
   if (!hydrated) return null;
 
-  const overrides = state as unknown as CSSProperties;
+  const overrides: CSSProperties = state;
 
   return (
     <div className="flex min-h-screen bg-bg-primary text-text-primary">
