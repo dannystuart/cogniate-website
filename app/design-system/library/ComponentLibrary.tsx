@@ -81,7 +81,7 @@ export default function ComponentLibrary() {
 
       <LibraryCard title="ScrollIndicator" importPath="app/components/ScrollIndicator.tsx">
         <VariantTile label="Default" fullWidth>
-          <div className="relative h-[380px] w-full flex items-start justify-center">
+          <div className="relative h-[230px] w-full overflow-hidden">
             <ScrollIndicator />
           </div>
         </VariantTile>
