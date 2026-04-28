@@ -8,7 +8,7 @@ export default function Landscape() {
     >
       <div className="relative mx-auto max-w-[1330px] px-5 md:px-6 pt-[80px] lg:pt-[100px]">
         {/* Heading */}
-        <h2 className="landscape-heading-gradient text-center text-[32px] sm:text-[48px] lg:text-[64px] font-semibold leading-[1.1] tracking-[-0.04em]">
+        <h2 className="landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]">
           Imagine being 150x faster.
         </h2>
 
