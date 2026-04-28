@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type CSSProperties } from "react";
 import { baselineState, BASELINE_TOKENS } from "../lib/design-system/baseline-tokens";
+import { loadTweaks, saveTweaks, clearTweaks } from "../lib/design-system/persistence";
 import type { TokenGroup, TokenState } from "../lib/design-system/types";
 import ControlGroup from "./ControlGroup";
 import TokenInput from "./TokenInput";
@@ -21,9 +22,24 @@ export default function DesignSystemClient() {
   const [state, setState] = useState<TokenState>(() => baselineState());
   const [hydrated, setHydrated] = useState(false);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional hydration gate
-  useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional hydration gate, load persisted tweaks client-side
+    setState(loadTweaks());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const id = setTimeout(() => saveTweaks(state), 200);
+    return () => clearTimeout(id);
+  }, [state, hydrated]);
+
   if (!hydrated) return null;
+
+  const reset = () => {
+    clearTweaks();
+    setState(baselineState());
+  };
 
   const overrides: CSSProperties = state;
 
@@ -43,6 +59,13 @@ export default function DesignSystemClient() {
             ))}
           </ControlGroup>
         ))}
+        <button
+          type="button"
+          onClick={reset}
+          className="mt-6 w-full text-sm border border-white/10 rounded px-3 py-2 hover:border-white/30"
+        >
+          Reset to baseline
+        </button>
       </aside>
       <main className="flex-1 overflow-y-auto p-10" style={overrides}>
         <section className="space-y-10">
