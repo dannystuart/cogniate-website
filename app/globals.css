@@ -31,6 +31,53 @@
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-serif: "Times New Roman", Times, serif;
   --font-mono: var(--font-geist-mono), monospace;
+
+  /* Typography sizes — three breakpoints */
+  --text-h1-mobile: 32px;
+  --text-h1-tablet: 52px;
+  --text-h1-desktop: 80px;
+  --text-h1-italic-mobile: 40px;
+  --text-h1-italic-tablet: 64px;
+  --text-h1-italic-desktop: 100px;
+  --text-h2-mobile: 32px;
+  --text-h2-tablet: 48px;
+  --text-h2-desktop: 64px;
+
+  /* Body */
+  --text-body: 18px;
+  --text-body-lg: 24px;
+
+  /* Heading meta */
+  --font-weight-h1: 600;
+  --font-weight-h2: 600;
+  --leading-h1: 1.1;
+  --leading-h2: 1.1;
+  --tracking-h1: -0.04em;
+  --tracking-h2: -0.04em;
+
+  /* Heading gradient stops — radial ellipse 100% 120% at 50% 50% */
+  --heading-gradient-stop-1: rgba(255, 255, 255, 1);
+  --heading-gradient-stop-2: rgba(212, 209, 218, 0.875);
+  --heading-gradient-stop-3: rgba(169, 163, 180, 0.75);
+  --heading-gradient-stop-4: rgba(125, 117, 143, 0.625);
+  --heading-gradient-stop-5: rgba(82, 71, 105, 0.5);
+
+  /* Landscape heading gradient stops — radial ellipse 100% 500% at 50% 50% */
+  --landscape-gradient-stop-1: rgba(255, 255, 255, 1);
+  --landscape-gradient-stop-2: rgba(212, 209, 218, 0.75);
+  --landscape-gradient-stop-3: rgba(169, 163, 180, 0.5);
+  --landscape-gradient-stop-4: rgba(82, 71, 105, 0);
+
+  /* Benefits italic gradient stops — radial ellipse 100% 100% at 50% 50% */
+  --benefits-italic-gradient-stop-1: rgba(255, 255, 255, 0.8);
+  --benefits-italic-gradient-stop-2: rgba(220, 200, 245, 0.8);
+  --benefits-italic-gradient-stop-3: rgba(184, 145, 234, 0.8);
+
+  /* Footer heading gradient stops — radial ellipse 100% 120% at 50% 50% */
+  --footer-gradient-stop-1: rgba(255, 255, 255, 1);
+  --footer-gradient-stop-2: rgba(212, 209, 218, 0.75);
+  --footer-gradient-stop-3: rgba(169, 163, 180, 0.5);
+  --footer-gradient-stop-4: rgba(82, 71, 105, 0);
 }
 
 /* ============================================
