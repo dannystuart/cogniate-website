@@ -5,6 +5,7 @@ import { baselineState, BASELINE_TOKENS } from "../lib/design-system/baseline-to
 import type { TokenGroup, TokenState } from "../lib/design-system/types";
 import ControlGroup from "./ControlGroup";
 import TokenInput from "./TokenInput";
+import ColorGrid from "./preview/ColorGrid";
 
 const GROUPS: { id: TokenGroup; title: string }[] = [
   { id: "colors", title: "Colors" },
@@ -40,7 +41,12 @@ export default function DesignSystemClient() {
         ))}
       </aside>
       <main className="flex-1 overflow-y-auto p-10" style={overrides}>
-        <p className="text-sm text-text-secondary">Preview goes here.</p>
+        <section className="space-y-10">
+          <div>
+            <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Colors</h2>
+            <ColorGrid />
+          </div>
+        </section>
       </main>
     </div>
   );
