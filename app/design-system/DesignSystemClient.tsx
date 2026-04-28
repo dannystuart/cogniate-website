@@ -9,6 +9,7 @@ import ColorGrid from "./preview/ColorGrid";
 import TypeScale from "./preview/TypeScale";
 import GradientSamples from "./preview/GradientSamples";
 import ComponentExcerpts from "./preview/ComponentExcerpts";
+import PreviewSection from "./preview/PreviewSection";
 
 const GROUPS: { id: TokenGroup; title: string }[] = [
   { id: "colors", title: "Colors" },
@@ -45,22 +46,18 @@ export default function DesignSystemClient() {
       </aside>
       <main className="flex-1 overflow-y-auto p-10" style={overrides}>
         <section className="space-y-10">
-          <div>
-            <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Colors</h2>
+          <PreviewSection title="Colors">
             <ColorGrid />
-          </div>
-          <div>
-            <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Typography</h2>
+          </PreviewSection>
+          <PreviewSection title="Typography">
             <TypeScale />
-          </div>
-          <div>
-            <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Gradients</h2>
+          </PreviewSection>
+          <PreviewSection title="Gradients">
             <GradientSamples />
-          </div>
-          <div>
-            <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Components</h2>
+          </PreviewSection>
+          <PreviewSection title="Components">
             <ComponentExcerpts />
-          </div>
+          </PreviewSection>
         </section>
       </main>
     </div>

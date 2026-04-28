@@ -5,6 +5,7 @@ import ButtonSecondary from "../../components/ButtonSecondary";
 export default function ComponentExcerpts() {
   return (
     <div className="space-y-12">
+      {/* Class chains duplicate Hero/Landscape verbatim so the cascade can preview on the live heading shape — do not DRY without preserving that contract */}
       {/* Hero excerpt */}
       <div className="border border-white/10 rounded-lg p-8 bg-bg-secondary">
         <EyebrowBadge>AI POWERED COURSE CREATOR</EyebrowBadge>
