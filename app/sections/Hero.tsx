@@ -87,13 +87,13 @@ export default function Hero() {
 
         {/* Main Heading */}
         <h1 className="mt-8 md:mt-[42px] text-center px-2 sm:px-0">
-          <span className="heading-gradient block text-[32px] sm:text-[52px] lg:text-[80px] font-semibold leading-[1.1] tracking-[-0.04em]">
+          <span className="heading-gradient block text-h1-mobile sm:text-h1-tablet lg:text-h1-desktop font-[var(--font-weight-h1)] leading-[var(--leading-h1)] tracking-[var(--tracking-h1)]">
             The future of{" "}
-            <span className="font-serif italic font-normal text-[40px] sm:text-[64px] lg:text-[100px] tracking-[-0.04em]">
+            <span className="font-serif italic font-normal text-h1-italic-mobile sm:text-h1-italic-tablet lg:text-h1-italic-desktop tracking-[var(--tracking-h1)]">
               learning,
             </span>
           </span>
-          <span className="heading-gradient block text-[32px] sm:text-[52px] lg:text-[80px] font-semibold leading-[1.1] tracking-[-0.04em]">
+          <span className="heading-gradient block text-h1-mobile sm:text-h1-tablet lg:text-h1-desktop font-[var(--font-weight-h1)] leading-[var(--leading-h1)] tracking-[var(--tracking-h1)]">
             authored in minutes.
           </span>
         </h1>
