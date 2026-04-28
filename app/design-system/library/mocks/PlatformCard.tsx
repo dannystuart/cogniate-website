@@ -2,9 +2,8 @@ import Image from "next/image";
 
 // Markup-only mock copied from app/sections/Platform.tsx.
 // Phase A will extract a real component with props.
-export default function PlatformCard() {
-  const glowColor = "rgba(183, 139, 249, 0.15)";
 
+function PlatformCardMockBody({ isLeft, glowColor }: { isLeft: boolean; glowColor: string }) {
   return (
     <div
       className="relative flex flex-col lg:flex-row gap-8 lg:gap-[80px] xl:gap-[120px] items-center overflow-hidden rounded-[20px] px-6 py-8 lg:px-[60px] xl:px-[80px] lg:py-[40px]"
@@ -27,7 +26,7 @@ export default function PlatformCard() {
             key={pct}
             className="absolute top-0 h-[140%] -translate-y-[15%]"
             style={{
-              left: `${pct}%`,
+              left: `${isLeft ? pct : 100 - pct}%`,
               width: "1px",
               background:
                 "linear-gradient(to bottom, transparent, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent)",
@@ -45,14 +44,18 @@ export default function PlatformCard() {
           style={{
             width: "94%",
             height: "118%",
-            right: "-10%",
+            [isLeft ? "right" : "left"]: "-10%",
             bottom: "-60%",
             background: `radial-gradient(ellipse at center, ${glowColor} 0%, transparent 65%)`,
           }}
         />
       </div>
 
-      <div className="relative z-10 shrink-0 w-full lg:w-[400px] xl:w-[455px]">
+      <div
+        className={`relative z-10 shrink-0 w-full lg:w-[400px] xl:w-[455px] ${
+          !isLeft ? "lg:order-2" : ""
+        }`}
+      >
         <div className="mb-4 lg:mb-5">
           <p className="landscape-heading-gradient font-semibold text-[28px] lg:text-[36px] xl:text-[40px] leading-[1.1] tracking-[-0.04em]">
             Sample title
@@ -112,7 +115,11 @@ export default function PlatformCard() {
       </div>
 
       <div
-        className="relative z-10 w-full lg:flex-1 overflow-hidden rounded-[20px] lg:rounded-r-none lg:-mr-[60px] xl:-mr-[80px]"
+        className={`relative z-10 w-full lg:flex-1 overflow-hidden rounded-[20px] ${
+          isLeft
+            ? "lg:rounded-r-none lg:-mr-[60px] xl:-mr-[80px]"
+            : "lg:rounded-l-none lg:-ml-[60px] xl:-ml-[80px] lg:order-1"
+        }`}
         style={{
           height: "clamp(240px, 30vw, 477px)",
           background: "#24202c",
@@ -135,4 +142,12 @@ export default function PlatformCard() {
       />
     </div>
   );
+}
+
+export default function PlatformCard() {
+  return <PlatformCardMockBody isLeft={true} glowColor="rgba(183, 139, 249, 0.15)" />;
+}
+
+export function PlatformCardRight() {
+  return <PlatformCardMockBody isLeft={false} glowColor="rgba(250, 103, 124, 0.15)" />;
 }

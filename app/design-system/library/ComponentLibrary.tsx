@@ -7,7 +7,7 @@ import VideoCard from "../../components/VideoCard";
 import ScrollIndicator from "../../components/ScrollIndicator";
 import PlatformCardAccordion, { type AccordionCardData } from "../../components/PlatformCardAccordion";
 import BenefitCard from "./mocks/BenefitCard";
-import PlatformCard from "./mocks/PlatformCard";
+import PlatformCard, { PlatformCardRight } from "./mocks/PlatformCard";
 import { InputFieldEmpty, InputFieldFilled } from "./mocks/InputField";
 import LibraryCard from "./LibraryCard";
 import VariantTile from "./VariantTile";
@@ -63,7 +63,7 @@ export default function ComponentLibrary() {
       </LibraryCard>
 
       <LibraryCard title="StoryIcon" importPath="app/components/StoryIcon.tsx">
-        <VariantTile label="Warning icon" fullWidth>
+        <VariantTile label="Idle states" fullWidth>
           <div className="flex items-center justify-center gap-8">
             <StoryIcon
               src="/assets/story-warning-icon.svg"
@@ -126,8 +126,11 @@ export default function ComponentLibrary() {
       </LibraryCard>
 
       <LibraryCard title="PlatformCard (mock)" importPath="app/design-system/library/mocks/PlatformCard.tsx">
-        <VariantTile label="Default" fullWidth>
+        <VariantTile label="content-left" fullWidth>
           <PlatformCard />
+        </VariantTile>
+        <VariantTile label="content-right" fullWidth>
+          <PlatformCardRight />
         </VariantTile>
       </LibraryCard>
 
