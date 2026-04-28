@@ -57,6 +57,7 @@ export default function Benefits() {
       {/* Heading */}
       <div className="flex flex-col items-center gap-5 md:gap-[22px] px-5 md:px-8 mb-12 md:mb-16 lg:mb-[56px]">
         <EyebrowBadge>BENEFITS</EyebrowBadge>
+        {/* leading-[1.3] (not --leading-h2) and md: (not sm:) breakpoint are intentional — do not unify */}
         <h2 className="heading-gradient text-center text-h2-mobile md:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[1.3] tracking-[var(--tracking-h2)] max-w-[1306px]">
           AI-native course authoring.
           <br />
