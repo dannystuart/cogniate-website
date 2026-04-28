@@ -1,14 +1,22 @@
 "use client";
 
 import { useState, useEffect, type CSSProperties } from "react";
-import { baselineState } from "../lib/design-system/baseline-tokens";
-import type { TokenState } from "../lib/design-system/types";
+import { baselineState, BASELINE_TOKENS } from "../lib/design-system/baseline-tokens";
+import type { TokenGroup, TokenState } from "../lib/design-system/types";
 import ControlGroup from "./ControlGroup";
+import TokenInput from "./TokenInput";
+
+const GROUPS: { id: TokenGroup; title: string }[] = [
+  { id: "colors", title: "Colors" },
+  { id: "typography", title: "Typography" },
+  { id: "gradients", title: "Gradients" },
+];
 
 export default function DesignSystemClient() {
   const [state, setState] = useState<TokenState>(() => baselineState());
   const [hydrated, setHydrated] = useState(false);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional hydration gate
   useEffect(() => setHydrated(true), []);
   if (!hydrated) return null;
 
@@ -18,15 +26,18 @@ export default function DesignSystemClient() {
     <div className="flex min-h-screen bg-bg-primary text-text-primary">
       <aside className="w-[360px] shrink-0 border-r border-white/10 sticky top-0 h-screen overflow-y-auto p-6">
         <h1 className="text-2xl font-semibold mb-4">Design System</h1>
-        <ControlGroup title="Colors">
-          <p className="text-xs text-text-secondary">Color inputs coming next</p>
-        </ControlGroup>
-        <ControlGroup title="Typography">
-          <p className="text-xs text-text-secondary">Typography inputs coming next</p>
-        </ControlGroup>
-        <ControlGroup title="Gradients">
-          <p className="text-xs text-text-secondary">Gradient inputs coming next</p>
-        </ControlGroup>
+        {GROUPS.map((g) => (
+          <ControlGroup key={g.id} title={g.title}>
+            {BASELINE_TOKENS.filter((t) => t.group === g.id).map((t) => (
+              <TokenInput
+                key={t.cssVar}
+                def={t}
+                value={state[t.cssVar] ?? t.baseline}
+                onChange={(v) => setState((s) => ({ ...s, [t.cssVar]: v }))}
+              />
+            ))}
+          </ControlGroup>
+        ))}
       </aside>
       <main className="flex-1 overflow-y-auto p-10" style={overrides}>
         <p className="text-sm text-text-secondary">Preview goes here.</p>
