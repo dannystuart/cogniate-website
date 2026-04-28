@@ -6,6 +6,8 @@ import type { TokenGroup, TokenState } from "../lib/design-system/types";
 import ControlGroup from "./ControlGroup";
 import TokenInput from "./TokenInput";
 import ColorGrid from "./preview/ColorGrid";
+import TypeScale from "./preview/TypeScale";
+import GradientSamples from "./preview/GradientSamples";
 
 const GROUPS: { id: TokenGroup; title: string }[] = [
   { id: "colors", title: "Colors" },
@@ -45,6 +47,14 @@ export default function DesignSystemClient() {
           <div>
             <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Colors</h2>
             <ColorGrid />
+          </div>
+          <div>
+            <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Typography</h2>
+            <TypeScale />
+          </div>
+          <div>
+            <h2 className="text-h2-mobile lg:text-h2-desktop font-[var(--font-weight-h2)] mb-6">Gradients</h2>
+            <GradientSamples />
           </div>
         </section>
       </main>
