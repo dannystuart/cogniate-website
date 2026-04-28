@@ -3,6 +3,7 @@
 import { useState, useEffect, type CSSProperties } from "react";
 import { baselineState, BASELINE_TOKENS } from "../lib/design-system/baseline-tokens";
 import { loadTweaks, saveTweaks, clearTweaks } from "../lib/design-system/persistence";
+import { assembleThemeBlock, countChanged } from "../lib/design-system/output";
 import type { TokenGroup, TokenState } from "../lib/design-system/types";
 import ControlGroup from "./ControlGroup";
 import TokenInput from "./TokenInput";
@@ -21,6 +22,8 @@ const GROUPS: { id: TokenGroup; title: string }[] = [
 export default function DesignSystemClient() {
   const [state, setState] = useState<TokenState>(() => baselineState());
   const [hydrated, setHydrated] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const changed = countChanged(state);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional hydration gate, load persisted tweaks client-side
@@ -41,6 +44,12 @@ export default function DesignSystemClient() {
     setState(baselineState());
   };
 
+  const onCopy = async () => {
+    await navigator.clipboard.writeText(assembleThemeBlock(state));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   const overrides: CSSProperties = state;
 
   return (
@@ -59,6 +68,16 @@ export default function DesignSystemClient() {
             ))}
           </ControlGroup>
         ))}
+        <div className="mt-6 flex flex-col gap-2">
+          <div className="text-xs text-text-secondary">{changed} of {Object.keys(state).length} tokens changed</div>
+          <button
+            type="button"
+            onClick={onCopy}
+            className="text-sm bg-accent-purple text-bg-primary rounded px-3 py-2 font-medium hover:bg-accent-purple-light"
+          >
+            {copied ? "Copied!" : "Copy @theme block"}
+          </button>
+        </div>
         <button
           type="button"
           onClick={reset}
