@@ -121,7 +121,7 @@ export default function CogniateStory() {
       <div className="relative mx-auto max-w-[1330px] px-5 md:px-6">
         <h2
           ref={headingRef}
-          className="landscape-heading-gradient text-center text-[32px] sm:text-[48px] lg:text-[64px] font-semibold leading-[1.1] tracking-[-0.04em]"
+          className="landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]"
         >
           <span className="font-serif italic">Learning</span> is a journey.
           <br />
