@@ -1,28 +1,62 @@
-<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-<!-- Circle background -->
-<g filter="url(#filter0_i)">
-<circle cx="60" cy="60" r="60" fill="url(#bgGrad)"/>
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Lightbulb Icon" filter="url(#filter0_d_0_4)">
+<g id="Ellipse 8" filter="url(#filter1_i_0_4)">
+<circle cx="90" cy="90" r="60" fill="url(#paint0_linear_0_4)"/>
 </g>
-<!-- Lightbulb vector centered at (42.5, 35), size 35x50 -->
-<g transform="translate(42.5, 35)">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M10 47.5C10 46.1193 11.1193 45 12.5 45H22.5C23.8807 45 25 46.1193 25 47.5C25 48.8807 23.8807 50 22.5 50H12.5C11.1193 50 10 48.8807 10 47.5Z" fill="url(#bulbGrad)"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M26.25 34.1008C26.25 33.2084 26.7341 32.395 27.4672 31.8861C32.0194 28.7263 35 23.4612 35 17.5C35 7.83502 27.165 0 17.5 0C7.83502 0 0 7.83502 0 17.5C0 23.4612 2.98062 28.7263 7.53284 31.8861C8.26594 32.395 8.75 33.2084 8.75 34.1008V35C8.75 38.4518 11.5482 41.25 15 41.25H20C23.4518 41.25 26.25 38.4518 26.25 35V34.1008Z" fill="url(#bulbGrad)"/>
+<g id="lightbulb" filter="url(#filter2_d_0_4)">
+<g id="vector" filter="url(#filter3_d_0_4)">
+<g transform="translate(72.5, 65)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M10 47.5C10 46.1193 11.1193 45 12.5 45H22.5C23.8807 45 25 46.1193 25 47.5C25 48.8807 23.8807 50 22.5 50H12.5C11.1193 50 10 48.8807 10 47.5Z" fill="url(#paint1_linear_0_4)"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M26.25 34.1008C26.25 33.2084 26.7341 32.395 27.4672 31.8861C32.0194 28.7263 35 23.4612 35 17.5C35 7.83502 27.165 0 17.5 0C7.83502 0 0 7.83502 0 17.5C0 23.4612 2.98062 28.7263 7.53284 31.8861C8.26594 32.395 8.75 33.2084 8.75 34.1008V35C8.75 38.4518 11.5482 41.25 15 41.25H20C23.4518 41.25 26.25 38.4518 26.25 35V34.1008Z" fill="url(#paint1_linear_0_4)"/>
+</g>
+</g>
+</g>
 </g>
 <defs>
-<filter id="filter0_i" x="0" y="0" width="120" height="120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<filter id="filter0_d_0_4" x="-0.000976562" y="0" width="180.001" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="15"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_4"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_4" result="shape"/>
+</filter>
+<filter id="filter1_i_0_4" x="30" y="30" width="120" height="120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
 <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
 <feOffset dy="1.47181"/>
 <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
 <feColorMatrix type="matrix" values="0 0 0 0 0.58267 0 0 0 0 0.58267 0 0 0 0 0.58267 0 0 0 0.25 0"/>
-<feBlend mode="normal" in2="shape" result="effect1_innerShadow"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_0_4"/>
 </filter>
-<linearGradient id="bgGrad" x1="60" y1="-15.2928" x2="60" y2="141.909" gradientUnits="userSpaceOnUse">
+<filter id="filter2_d_0_4" x="40" y="33" width="100" height="115" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="10.7692"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_4"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_4" result="shape"/>
+</filter>
+<filter id="filter3_d_0_4" x="50" y="42" width="78" height="96" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="10.7692"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.407843 0 0 0 0 0.913725 0 0 0 0 0.635294 0 0 0 0.5 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_4"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_4" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_0_4" x1="90" y1="14.7072" x2="90" y2="171.909" gradientUnits="userSpaceOnUse">
 <stop stop-color="#3E3B46"/>
 <stop offset="1" stop-color="#26232F"/>
 </linearGradient>
-<linearGradient id="bulbGrad" x1="17.5" y1="0" x2="17.5" y2="50" gradientUnits="userSpaceOnUse">
+<linearGradient id="paint1_linear_0_4" x1="17.5" y1="0" x2="17.5" y2="50" gradientUnits="userSpaceOnUse">
 <stop stop-color="#68E9A2"/>
 <stop offset="1" stop-color="#E7FCDD"/>
 </linearGradient>

@@ -29,7 +29,7 @@
 
   /* Font families */
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-serif: var(--font-ibm-plex-serif), Georgia, serif;
+  --font-serif: "Times New Roman", Times, serif;
   --font-mono: var(--font-geist-mono), monospace;
 }
 
@@ -85,6 +85,39 @@ body {
 }
 
 /* story-heading-gradient removed — CogniateStory reuses landscape-heading-gradient */
+
+/* ============================================
+   BENEFITS SECTION — Italic Gradient
+   ============================================ */
+
+.benefits-italic-gradient {
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(220, 200, 245, 0.8) 50%,
+    rgba(184, 145, 234, 0.8) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================
+   FOOTER HEADING GRADIENT
+   ============================================ */
+
+.footer-heading-gradient {
+  background: radial-gradient(
+    ellipse 100% 120% at 50% 50%,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(212, 209, 218, 0.75) 25%,
+    rgba(169, 163, 180, 0.5) 50%,
+    rgba(82, 71, 105, 0) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 /* ============================================
    GLOW LINE ANIMATION
