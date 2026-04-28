@@ -21,19 +21,8 @@ for (const bp of breakpoints) {
       });
     });
 
-    // Pause GSAP if it happens to be exposed on window. The project
-    // imports gsap as a module so this is typically a no-op, but if
-    // any code (e.g. devtools helpers) sets window.gsap we still pause.
-    await page.evaluate(() => {
-      // @ts-expect-error gsap is not declared on window
-      const g = typeof window !== "undefined" ? window.gsap : undefined;
-      if (g) {
-        g.globalTimeline?.pause?.();
-        g.ticker?.sleep?.();
-      }
-    });
-
-    // Allow any settled state (lazy images, scroll-driven layout) to flush.
+    // Settle: video pause + lazy images + GSAP intro animations all converge by ~1.5s.
+    // Empirically determined — under 1s produces flake on the hero region.
     await page.waitForTimeout(1500);
 
     await expect(page).toHaveScreenshot(`landing-${bp.name}.png`, {
