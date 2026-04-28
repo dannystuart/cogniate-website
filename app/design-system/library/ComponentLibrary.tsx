@@ -6,6 +6,9 @@ import NavMenu from "../../components/NavMenu";
 import VideoCard from "../../components/VideoCard";
 import ScrollIndicator from "../../components/ScrollIndicator";
 import PlatformCardAccordion, { type AccordionCardData } from "../../components/PlatformCardAccordion";
+import BenefitCard from "./mocks/BenefitCard";
+import PlatformCard from "./mocks/PlatformCard";
+import { InputFieldEmpty, InputFieldFilled } from "./mocks/InputField";
 import LibraryCard from "./LibraryCard";
 import VariantTile from "./VariantTile";
 
@@ -113,6 +116,27 @@ export default function ComponentLibrary() {
           <div className="w-full min-h-[480px]">
             <PlatformCardAccordion card={SAMPLE_ACCORDION_CARD} />
           </div>
+        </VariantTile>
+      </LibraryCard>
+
+      <LibraryCard title="BenefitCard (mock)" importPath="app/design-system/library/mocks/BenefitCard.tsx">
+        <VariantTile label="Default" fullWidth>
+          <BenefitCard />
+        </VariantTile>
+      </LibraryCard>
+
+      <LibraryCard title="PlatformCard (mock)" importPath="app/design-system/library/mocks/PlatformCard.tsx">
+        <VariantTile label="Default" fullWidth>
+          <PlatformCard />
+        </VariantTile>
+      </LibraryCard>
+
+      <LibraryCard title="InputField (mock)" importPath="app/design-system/library/mocks/InputField.tsx">
+        <VariantTile label="Empty">
+          <InputFieldEmpty />
+        </VariantTile>
+        <VariantTile label="Filled">
+          <InputFieldFilled />
         </VariantTile>
       </LibraryCard>
     </div>
