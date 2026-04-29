@@ -81,7 +81,7 @@ export default function Hero() {
       <NavMenu />
 
       {/* ===== CONTENT (auto layout) ===== */}
-      <div className="relative z-10 flex flex-col items-center pt-[240px] lg:pt-[420px] pb-[200px] lg:pb-[340px] px-5 md:px-6 mx-auto max-w-[1330px]">
+      <div className="relative z-10 flex flex-col items-center pt-[140px] lg:pt-[200px] pb-[160px] lg:pb-[240px] px-5 md:px-6 mx-auto max-w-[1330px]">
         {/* Eyebrow */}
         <EyebrowBadge>AI POWERED COURSE CREATOR</EyebrowBadge>
 

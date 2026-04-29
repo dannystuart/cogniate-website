@@ -271,7 +271,7 @@ function PlatformCard({
             : "lg:rounded-l-none lg:-ml-[60px] xl:-ml-[80px] lg:order-1"
         }`}
         style={{
-          height: "clamp(240px, 30vw, 477px)",
+          height: "clamp(300px, 38vw, 600px)",
           background: "#24202c",
         }}
       >

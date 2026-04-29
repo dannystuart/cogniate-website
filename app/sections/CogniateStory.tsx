@@ -123,9 +123,9 @@ export default function CogniateStory() {
           ref={headingRef}
           className="landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]"
         >
-          <span className="font-serif italic">Learning</span> is a journey.
+          Learning is a journey.
           <br />
-          The <span className="font-serif italic">Cogniate</span> story.
+          The Cogniate story.
         </h2>
       </div>
 
