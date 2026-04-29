@@ -440,7 +440,7 @@ export default function PlatformCardAccordion({
         </div>
 
         {/* Right column: visual panel */}
-        <div className="relative z-10 w-full lg:w-1/2 overflow-hidden rounded-[20px] lg:rounded-l-none min-h-[300px] lg:min-h-0">
+        <div className="relative z-10 w-full lg:w-1/2 overflow-hidden rounded-[20px] lg:rounded-l-none min-h-[300px] lg:min-h-[600px]">
           {/* Visual background */}
           <div className="absolute inset-0 bg-[#17161b]" />
 

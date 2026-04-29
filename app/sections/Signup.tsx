@@ -184,7 +184,7 @@ export default function Signup() {
             {offers.map((offer, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 bg-[#0c0c0c] rounded-2xl px-4 py-3 border border-white/[0.06]"
+                className="flex items-center gap-3 bg-[#0c0c0c] rounded-2xl px-4 py-3"
               >
                 <Image
                   src="/assets/signup-checkmark.svg"
@@ -195,7 +195,7 @@ export default function Signup() {
                 />
                 <span className="text-[16px] md:text-[18px] text-white">
                   <span className="font-semibold">{offer.bold}</span>{" "}
-                  <span className="font-light text-text-secondary">
+                  <span className="font-light text-white">
                     {offer.regular}
                   </span>
                 </span>

@@ -234,7 +234,7 @@ export default function HowItWorks() {
       </div>
 
       {/* ===== CONTENT ===== */}
-      <div className="relative z-10 mx-auto max-w-[1554px] px-5 md:px-6 lg:pt-[290px]">
+      <div className="relative z-10 mx-auto max-w-[1280px] px-5 md:px-6 lg:pt-[290px]">
         {/* HOW IT WORKS eyebrow — sits below the horizontal animated line */}
         <div
           className="inline-flex items-center h-[52px] px-12 mb-8 lg:mb-16"
