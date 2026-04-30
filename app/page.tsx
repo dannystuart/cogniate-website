@@ -1,6 +1,7 @@
 import Hero from "./sections/Hero";
 import Landscape from "./sections/Landscape";
 import CogniateStory from "./sections/CogniateStory";
+import CogniateLyraReveal from "./sections/CogniateLyraReveal";
 import HowItWorks from "./sections/HowItWorks";
 import Platform from "./sections/Platform";
 import Benefits from "./sections/Benefits";
@@ -12,6 +13,7 @@ export default function Home() {
       <Hero />
       <Landscape />
       <CogniateStory />
+      <CogniateLyraReveal />
       <HowItWorks />
       <Platform />
       <Benefits />
