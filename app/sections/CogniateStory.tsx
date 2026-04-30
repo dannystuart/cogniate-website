@@ -95,6 +95,11 @@ const stories = [
       "Acknowledge the problem is systemic, not individual. L&D leaders are talented people stuck in broken workflows.",
     size: 147,
     glowColor: "rgba(250, 103, 124, 0.5)",
+    // Tooltip: warm cream → soft salmon (Figma reference, matches the salmon
+    // cluster); ambient glow uses the cluster tint at low alpha.
+    gradientFrom: "#fce3b6",
+    gradientTo: "#fcafb1",
+    accentColor: "rgba(250, 103, 124, 0.18)",
   },
   {
     id: "mission",
@@ -105,6 +110,9 @@ const stories = [
       "Placeholder: describe the mission and goals that drive the Cogniate platform forward.",
     size: 120,
     glowColor: "rgba(172, 124, 241, 0.5)",
+    gradientFrom: "#e3d4fc",
+    gradientTo: "#c4afff",
+    accentColor: "rgba(172, 124, 241, 0.18)",
   },
   {
     id: "insight",
@@ -115,6 +123,9 @@ const stories = [
       "Placeholder: explain the key insight that led to building Cogniate and how it transforms learning.",
     size: 120,
     glowColor: "rgba(104, 233, 162, 0.5)",
+    gradientFrom: "#d4fce3",
+    gradientTo: "#9be9b6",
+    accentColor: "rgba(104, 233, 162, 0.18)",
   },
 ] as const;
 
@@ -269,6 +280,10 @@ export default function CogniateStory() {
         desktop.style.setProperty("--icon-insight-opacity", String(ramp(p, 0.55, 0.65, 0, 1)));
         // Tooltips become available only once the section reaches the hold beat.
         desktop.style.setProperty("--tooltip-pointer", p > 0.65 ? "auto" : "none");
+        // Final ramp — fades the entire desktop tableau (particle Canvas + icons +
+        // logo + SVG circles) to 0 across the last 8% of the pin so CogniateLyraReveal
+        // can fade its video in without a visible pinch-cut at the section seam.
+        desktop.style.setProperty("--story-fadeout", String(ramp(p, 0.92, 1.0, 1, 0)));
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -301,14 +316,19 @@ export default function CogniateStory() {
             container's centre on screen so the formed silhouette aligns with
             the DOM logo PNG. */}
         {swarmTargets && (
-          <ParticleSwarm
-            scrollProgress={progressRef}
-            logoSrc="/assets/story-cogniate-logo.png"
-            iconTargets={swarmTargets.iconTargets}
-            blobCenter={swarmTargets.blobCenter}
-            originOffsetRef={originOffsetRef}
+          <div
             className="pointer-events-none absolute inset-0"
-          />
+            style={{ opacity: "var(--story-fadeout, 1)" }}
+          >
+            <ParticleSwarm
+              scrollProgress={progressRef}
+              logoSrc="/assets/story-cogniate-logo.png"
+              iconTargets={swarmTargets.iconTargets}
+              blobCenter={swarmTargets.blobCenter}
+              originOffsetRef={originOffsetRef}
+              className="absolute inset-0"
+            />
+          </div>
         )}
 
         {/* Heading — relative so it stacks above the absolutely-positioned
@@ -323,7 +343,7 @@ export default function CogniateStory() {
 
         {/* Circles container — same size and aspect ratio as before, just
             nested one level deeper inside the new flex wrapper. */}
-        <div className="relative mt-12 w-full px-4 xl:mt-16">
+        <div className="relative mt-16 w-full px-4 xl:mt-20">
           <div
             className="story-circles-container relative mx-auto"
             style={{ maxWidth: 1700, aspectRatio: "1718 / 635" }}
@@ -334,7 +354,12 @@ export default function CogniateStory() {
               alt=""
               className="absolute inset-0 size-full"
               draggable={false}
+              style={{ opacity: "var(--story-fadeout, 1)" }}
             />
+
+          {/* Icon/logo layer — fades with --story-fadeout so the Story tableau
+              crossfades into the Reveal's video at the section seam. */}
+          <div className="absolute inset-0" style={{ opacity: "var(--story-fadeout, 1)" }}>
 
           {/* Cogniate Logo — centered on circles */}
           <div
@@ -390,6 +415,9 @@ export default function CogniateStory() {
                 title={stories[0].title}
                 description={stories[0].description}
                 icon={stories[0].icon}
+                gradientFrom={stories[0].gradientFrom}
+                gradientTo={stories[0].gradientTo}
+                accentColor={stories[0].accentColor}
               />
             </div>
           </div>
@@ -427,6 +455,9 @@ export default function CogniateStory() {
                 title={stories[1].title}
                 description={stories[1].description}
                 icon={stories[1].icon}
+                gradientFrom={stories[1].gradientFrom}
+                gradientTo={stories[1].gradientTo}
+                accentColor={stories[1].accentColor}
               />
             </div>
           </div>
@@ -464,9 +495,14 @@ export default function CogniateStory() {
                 title={stories[2].title}
                 description={stories[2].description}
                 icon={stories[2].icon}
+                gradientFrom={stories[2].gradientFrom}
+                gradientTo={stories[2].gradientTo}
+                accentColor={stories[2].accentColor}
               />
             </div>
           </div>
+          </div>
+          {/* end icon/logo layer */}
           </div>
           {/* end story-circles-container */}
         </div>
@@ -513,6 +549,9 @@ export default function CogniateStory() {
                   title={story.title}
                   description={story.description}
                   icon={story.icon}
+                  gradientFrom={story.gradientFrom}
+                  gradientTo={story.gradientTo}
+                  accentColor={story.accentColor}
                 />
               </div>
             </div>
