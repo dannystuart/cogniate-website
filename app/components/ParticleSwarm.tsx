@@ -155,9 +155,12 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
   // small palette so the average doesn't muddy. Phase 2's cluster tint will
   // multiply on top of this.
   const aBaseTint = new Float32Array(count * 3);
+  // Palette weighted 50/30/15/5 (white / lavender / salmon / mint), with a
+  // saturation gradient inside each colour so depth reads across particles —
+  // some barely-tinted, some pronounced. Lavender values come from the design
+  // system mission glow rgb(172,124,241) mixed with white at varying ratios.
   const variants: ReadonlyArray<readonly [number, number, number]> = [
-    // White majority (12 of 20 = 60%) — keeps overall feel luminous-white.
-    [1.0, 1.0, 1.0],
+    // White majority (10 of 20 = 50%)
     [1.0, 1.0, 1.0],
     [1.0, 1.0, 1.0],
     [1.0, 1.0, 1.0],
@@ -168,18 +171,19 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
     [1.0, 0.98, 0.95], // warm white
     [1.0, 0.98, 0.95],
     [0.96, 0.97, 1.0], // very faint cool
-    [1.0, 0.97, 0.96], // very faint warm
-    // Lavender accents (5 of 20 = 25%) — the "purples etc" the user called out.
-    [0.88, 0.82, 0.97], // soft lavender
-    [0.88, 0.82, 0.97],
-    [0.85, 0.78, 0.96], // slightly deeper lavender
-    [0.92, 0.86, 0.99], // pale lavender
-    [0.92, 0.86, 0.99],
-    // Salmon (2 of 20 = 10%)
-    [0.96, 0.84, 0.86], // soft salmon
-    [0.96, 0.84, 0.86],
+    // Lavender saturation ramp (6 of 20 = 30%) — pale → bold for depth
+    [0.93, 0.88, 0.99], // 20% lavender mix — barely there
+    [0.88, 0.80, 0.98], // 35% mix — soft
+    [0.88, 0.80, 0.98],
+    [0.83, 0.73, 0.97], // 50% mix — mid
+    [0.78, 0.66, 0.96], // 70% mix — pronounced
+    [0.74, 0.60, 0.95], // 80% mix — bold (still soft against bright sprite)
+    // Salmon ramp (3 of 20 = 15%) — same depth principle
+    [0.97, 0.88, 0.89], // 25% mix
+    [0.94, 0.80, 0.82], // 50% mix
+    [0.91, 0.71, 0.74], // 75% mix
     // Mint (1 of 20 = 5%)
-    [0.85, 0.94, 0.88], // soft mint
+    [0.85, 0.94, 0.88], // mid mint
   ];
   for (let i = 0; i < count; i++) {
     const v = variants[Math.floor(Math.random() * variants.length)];
