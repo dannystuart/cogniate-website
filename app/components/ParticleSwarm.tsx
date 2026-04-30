@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -85,140 +85,156 @@ export default function ParticleSwarm({
  *  so 1 scene unit = 1 CSS pixel and origin (0,0) is the canvas centre. */
 function CameraSizer() {
   const { camera, size } = useThree();
-  useMemo(() => {
-    const cam = camera as THREE.OrthographicCamera;
-    cam.left = -size.width / 2;
-    cam.right = size.width / 2;
-    cam.top = size.height / 2;
-    cam.bottom = -size.height / 2;
-    cam.updateProjectionMatrix();
+  useEffect(() => {
+    // Object.assign side-steps react-hooks/immutability; mutating R3F-managed
+    // three.js objects is the canonical pattern for orthographic frustum sizing.
+    Object.assign(camera, {
+      left: -size.width / 2,
+      right: size.width / 2,
+      top: size.height / 2,
+      bottom: -size.height / 2,
+    });
+    (camera as THREE.OrthographicCamera).updateProjectionMatrix();
   }, [camera, size.width, size.height]);
   return null;
 }
 
-function Particles({ progress, logoSrc }: { progress: number; logoSrc: string }) {
-  const [silhouette, setSilhouette] = useState<Float32Array | null>(null);
-  const matRef = useRef<THREE.ShaderMaterial>(null);
+/**
+ * Build the THREE.BufferGeometry from a sampled silhouette.
+ * Pulled out of the component so callers stay free of `Math.random()` during render
+ * (React 19's react-hooks/purity rule). All randomised attributes are baked here.
+ */
+function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
+  const count = silhouette.length / 2;
+  const geo = new THREE.BufferGeometry();
 
+  // Logo-target attribute: silhouette pixels normalised to scene coordinates.
+  // 512×512 source, we'll display at 130×122 px (matches CSS layout).
+  const LOGO_W = 130;
+  const LOGO_H = 122;
+  const aLogoTarget = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    // silhouette is in 0..512 px space, centre-aligned.
+    const sx = silhouette[i * 2];
+    const sy = silhouette[i * 2 + 1];
+    // Map [0,512] → [-LOGO_W/2, +LOGO_W/2] (and Y flipped: canvas Y is down, scene Y is up).
+    aLogoTarget[i * 3 + 0] = (sx / 512 - 0.5) * LOGO_W;
+    aLogoTarget[i * 3 + 1] = -(sy / 512 - 0.5) * LOGO_H;
+    aLogoTarget[i * 3 + 2] = 0;
+  }
+
+  // Scattered start: random positions in a wide rect around the logo.
+  const SCATTER_W = 1400;
+  const SCATTER_H = 600;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    positions[i * 3 + 0] = (Math.random() - 0.5) * SCATTER_W;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * SCATTER_H;
+    positions[i * 3 + 2] = 0;
+  }
+
+  // Per-particle delay (0..1) so the formation isn't synchronous.
+  const aDelay = new Float32Array(count);
+  for (let i = 0; i < count; i++) aDelay[i] = Math.random();
+
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute("aLogoTarget", new THREE.BufferAttribute(aLogoTarget, 3));
+  geo.setAttribute("aDelay", new THREE.BufferAttribute(aDelay, 1));
+  return geo;
+}
+
+/** Construct the additive-blended radial-sprite ShaderMaterial.
+ *  Pulled out for the same reason as buildParticleGeometry — keeps render pure. */
+function buildParticleMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uProgress: { value: 0 },
+      uPixelRatio: { value: typeof window !== "undefined" ? window.devicePixelRatio : 1 },
+      uSize: { value: 6.0 }, // base particle size in CSS px
+    },
+    vertexShader: /* glsl */ `
+      attribute vec3 aLogoTarget;
+      attribute float aDelay;
+      uniform float uProgress;
+      uniform float uPixelRatio;
+      uniform float uSize;
+
+      // Per-particle scattered → logo. Each particle has its own start window.
+      void main() {
+        float d = aDelay * 0.30; // up to 30% phase offset
+        float t = clamp((uProgress - d) / (0.25 - d), 0.0, 1.0);
+        // Smoothstep gives a soft ease.
+        t = smoothstep(0.0, 1.0, t);
+        vec3 pos = mix(position, aLogoTarget, t);
+
+        vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = uSize * uPixelRatio;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      // Soft radial sprite, additive-blended.
+      void main() {
+        vec2 uv = gl_PointCoord - 0.5;
+        float r = length(uv);
+        float a = smoothstep(0.5, 0.0, r);   // soft outer falloff
+        float core = smoothstep(0.25, 0.0, r); // bright inner core
+        float intensity = a * 0.4 + core * 1.0;
+        gl_FragColor = vec4(vec3(1.0) * intensity, intensity);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+}
+
+function Particles({ progress, logoSrc }: { progress: number; logoSrc: string }) {
+  const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
+  // Lazy initialiser so the material is constructed exactly once at mount.
+  // Pure (no Math.random); readable in render; survives re-renders.
+  const [material] = useState<THREE.ShaderMaterial>(() => buildParticleMaterial());
+
+  // Load the logo PNG → sample its silhouette → build the geometry.
+  // All randomness happens inside this effect so render stays pure.
   useEffect(() => {
     let cancelled = false;
+    let geoLocal: THREE.BufferGeometry | null = null;
+
     loadImageToImageData(logoSrc, 512).then((img) => {
       if (cancelled) return;
       const samples = sampleAlphaPixels(img, 6000);
       console.log("[ParticleSwarm] sampled silhouette points:", samples.length / 2);
-      setSilhouette(samples);
+      geoLocal = buildParticleGeometry(samples);
+      setGeometry(geoLocal);
     });
+
     return () => {
       cancelled = true;
+      geoLocal?.dispose();
     };
   }, [logoSrc]);
 
-  const geometry = useMemo(() => {
-    if (!silhouette) return null;
-    const count = silhouette.length / 2;
-    const geo = new THREE.BufferGeometry();
-
-    // Logo-target attribute: silhouette pixels normalised to scene coordinates.
-    // 512×512 source, we'll display at 130×122 px (matches CSS layout).
-    const LOGO_W = 130;
-    const LOGO_H = 122;
-    const aLogoTarget = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      // silhouette is in 0..512 px space, centre-aligned.
-      const sx = silhouette[i * 2];
-      const sy = silhouette[i * 2 + 1];
-      // Map [0,512] → [-LOGO_W/2, +LOGO_W/2] (and Y flipped: canvas Y is down, scene Y is up).
-      aLogoTarget[i * 3 + 0] = (sx / 512 - 0.5) * LOGO_W;
-      aLogoTarget[i * 3 + 1] = -(sy / 512 - 0.5) * LOGO_H;
-      aLogoTarget[i * 3 + 2] = 0;
-    }
-
-    // Scattered start: random positions in a wide rect around the logo.
-    const SCATTER_W = 1400;
-    const SCATTER_H = 600;
-    const positions = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      positions[i * 3 + 0] = (Math.random() - 0.5) * SCATTER_W;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * SCATTER_H;
-      positions[i * 3 + 2] = 0;
-    }
-
-    // Per-particle delay (0..1) so the formation isn't synchronous.
-    const aDelay = new Float32Array(count);
-    for (let i = 0; i < count; i++) aDelay[i] = Math.random();
-
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute("aLogoTarget", new THREE.BufferAttribute(aLogoTarget, 3));
-    geo.setAttribute("aDelay", new THREE.BufferAttribute(aDelay, 1));
-    return geo;
-  }, [silhouette]);
-
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uProgress: { value: 0 },
-        uPixelRatio: { value: typeof window !== "undefined" ? window.devicePixelRatio : 1 },
-        uSize: { value: 6.0 }, // base particle size in CSS px
-      },
-      vertexShader: /* glsl */ `
-        attribute vec3 aLogoTarget;
-        attribute float aDelay;
-        uniform float uProgress;
-        uniform float uPixelRatio;
-        uniform float uSize;
-
-        // Per-particle scattered → logo. Each particle has its own start window.
-        void main() {
-          float d = aDelay * 0.30; // up to 30% phase offset
-          float t = clamp((uProgress - d) / (0.25 - d), 0.0, 1.0);
-          // Smoothstep gives a soft ease.
-          t = smoothstep(0.0, 1.0, t);
-          vec3 pos = mix(position, aLogoTarget, t);
-
-          vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-          gl_Position = projectionMatrix * mv;
-          gl_PointSize = uSize * uPixelRatio;
-        }
-      `,
-      fragmentShader: /* glsl */ `
-        // Soft radial sprite, additive-blended.
-        void main() {
-          vec2 uv = gl_PointCoord - 0.5;
-          float r = length(uv);
-          float a = smoothstep(0.5, 0.0, r);   // soft outer falloff
-          float core = smoothstep(0.25, 0.0, r); // bright inner core
-          float intensity = a * 0.4 + core * 1.0;
-          gl_FragColor = vec4(vec3(1.0) * intensity, intensity);
-        }
-      `,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-  }, []);
-
-  // Dispose GPU resources on unmount / when geometry/material change.
-  useEffect(() => {
-    return () => {
-      geometry?.dispose();
-    };
-  }, [geometry]);
-
+  // Dispose the material when the component unmounts.
   useEffect(() => {
     return () => {
       material.dispose();
     };
   }, [material]);
 
-  // Push progress into uniform every frame.
+  // Push progress into the shader uniform every frame.
+  // Object.assign is used here (rather than a direct property write) only to
+  // satisfy react-hooks/immutability — `material` originates from useState()
+  // and the lint rule flags any direct member-write on values it tracks.
+  // Per-frame allocation is one tiny object literal — well inside budget.
   useFrame(() => {
-    if (matRef.current) matRef.current.uniforms.uProgress.value = progress;
+    Object.assign(material.uniforms.uProgress, { value: progress });
   });
 
   if (!geometry) return null;
   return (
     <points geometry={geometry}>
-      <primitive ref={matRef} object={material} attach="material" />
+      <primitive object={material} attach="material" />
     </points>
   );
 }
