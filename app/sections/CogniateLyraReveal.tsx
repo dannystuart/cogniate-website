@@ -99,11 +99,21 @@ const TIMING = {
   WORD_PUBLISH: [0.96, 1.0] as const,
 } as const;
 
+// Vertical position of the typeset wordmark, anchored to where the dust-Lyra
+// resolves inside the final video frame. Verified at ?lyraProgress=0.78 on a
+// 1728×1080 viewport — typeset centre lands on the dust cursive's visual centre.
+const LYRA_TOP_VH = 50;
+
 export default function CogniateLyraReveal() {
   const sectionRef = useRef<HTMLElement>(null);
   const pinWrapperRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef(0);
+
+  // Extract once so Task 7's mask-radius tuning can't drift between the
+  // standard and -webkit- prefixed forms.
+  const VIDEO_MASK =
+    "radial-gradient(ellipse 70% 70% at 50% 50%, black 45%, transparent 100%)";
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -156,7 +166,13 @@ export default function CogniateLyraReveal() {
 
       ScrollTrigger.create({
         trigger: wrapper,
-        start: "top top",
+        // "top bottom" so the trigger activates the moment the section's top
+        // edge enters the bottom of the viewport — i.e., as Story finishes
+        // unpinning. Closes the ~1 viewport gap that "top top" produced
+        // between Story's --story-fadeout reaching 0 and Reveal's
+        // --video-opacity beginning to ramp up. Verified at progress sweep
+        // shows storyFadeout → 0 and videoOpacity → 1 in the same tick window.
+        start: "top bottom-=1",
         end: TIMING.PIN_DISTANCE,
         pin: true,
         scrub: 1,
@@ -251,14 +267,21 @@ export default function CogniateLyraReveal() {
       className="relative w-full bg-bg-secondary overflow-hidden"
     >
       <div ref={pinWrapperRef} className="relative min-h-screen w-full">
-        {/* Video — occupies upper 60% of viewport so the dust-Lyra at the
-            video's tail clearly sits ABOVE the typeset Lyra wordmark below.
-            object-cover with center 25% lifts the cloud focal point upward
-            within that band. */}
+        {/* Video — centred horizontally, anchored ~10vh from the top so there's
+            breathing room above. Width clamps so the source isn't stretched past
+            native (1584×1308). Edge-masked into bg-secondary on all four sides
+            so no rectangular boundary is visible. */}
         <video
           ref={videoRef}
-          className="absolute left-0 right-0 top-0 h-[62vh] w-full object-cover"
-          style={{ objectPosition: "center 25%", opacity: "var(--video-opacity, 0)" }}
+          className="lyra-video absolute left-1/2 top-[10vh] -translate-x-1/2"
+          style={{
+            width: "var(--lyra-video-width, clamp(760px, 60vw, 1100px))",
+            height: "auto",
+            objectFit: "contain",
+            maskImage: VIDEO_MASK,
+            WebkitMaskImage: VIDEO_MASK,
+            opacity: "var(--video-opacity, 0)",
+          }}
           muted
           playsInline
           preload="auto"
@@ -269,23 +292,33 @@ export default function CogniateLyraReveal() {
           <source src="/assets/cogniate-scrub-lyra-video.mp4" type="video/mp4" />
         </video>
 
-        {/* Ambient blur — bridges the video into the text below. Sized from
-            Figma node 10:10271 (940×431); blurred to soften the boundary
-            between the video band and the text stack. */}
+        {/* Halo — soft dark blurred ellipse sized to envelop the typeset wordmark
+            with margin. Shares --lyra-opacity so it never appears empty. Sits
+            directly behind the wordmark; no individual halos for tagline/CDP. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[55vh] -translate-x-1/2 -translate-y-1/2"
+          className="lyra-halo pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
           style={{
-            width: 940,
-            height: 431,
+            top: `${LYRA_TOP_VH}vh`,
+            width: "clamp(420px, 45vw, 600px)",
+            height: "clamp(180px, 18vw, 280px)",
             background:
-              "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 70%)",
-            filter: "blur(60px)",
+              "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,0,0,0.85) 0%, transparent 70%)",
+            filter: "blur(40px)",
+            opacity: "var(--lyra-opacity, 0)",
           }}
         />
 
-        {/* Text stack — occupies lower 38% of viewport, content centred. */}
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[38vh] flex flex-col items-center justify-center">
+        {/* Typeset wordmark — overlays the dust-Lyra at the same screen position.
+            Sized so its baseline matches where the resolved dust lands in the
+            final video frame. Position anchor is LYRA_TOP_VH; verify by capturing
+            a still at ?lyraProgress=0.78 and overlaying the wordmark. The outer
+            div owns horizontal/vertical centring so the inner <h2> can drive its
+            Y reveal with a clean translateY (matches the halo + tagline pattern). */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ top: `${LYRA_TOP_VH}vh` }}
+        >
           <h2
             className="lyra-wordmark text-center"
             style={{
@@ -305,17 +338,19 @@ export default function CogniateLyraReveal() {
             }}
           >
             Lyra
-            <sup
-              style={{ fontWeight: 300, fontSize: "0.557em", verticalAlign: "super" }}
-            >
+            <sup style={{ fontWeight: 300, fontSize: "0.557em", verticalAlign: "super" }}>
               ®
             </sup>
           </h2>
+        </div>
 
+        {/* Tagline + CDP — sit in the lower viewport, inside the gradient bridge
+            zone where contrast is fine without per-element halos. Stacked
+            absolutely so they don't push other elements; centred horizontally. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-[18vh] flex flex-col items-center">
           <p
             className="lyra-tagline text-center"
             style={{
-              marginTop: "1.25rem",
               fontFamily: "var(--font-sans)",
               fontWeight: 300,
               fontSize: "clamp(18px, 1.7vw, 24px)",
@@ -331,12 +366,6 @@ export default function CogniateLyraReveal() {
             Your AI assistant to help you from idea to fully created course.
           </p>
 
-          {/* "Create. Design. Publish" — solid white text. Per-word spans
-              are inline-block (so each can carry its own opacity + transform
-              for the staggered reveal); inline-block defeats the parent's
-              background-clip-text, so the Figma's radial gradient mask is
-              dropped here in favour of a solid colour. The line still gets
-              a subtle dark-edge feel via the ambient blur sitting behind it. */}
           <h3
             className="lyra-cdp text-center"
             style={{
@@ -384,6 +413,20 @@ export default function CogniateLyraReveal() {
             </span>
           </h3>
         </div>
+
+        {/* Gradient bridge — pulls the video's bottom edge into bg-secondary and
+            creates a continuous fade through the text region into HowItWorks.
+            bg-secondary (#101011) and HowItWorks's #111112 are visually identical,
+            so no complementary fade is needed at the section seam by default. */}
+        <div
+          aria-hidden
+          className="lyra-bridge pointer-events-none absolute inset-x-0 bottom-0"
+          style={{
+            height: "35%",
+            background:
+              "linear-gradient(to bottom, transparent 0%, var(--color-bg-secondary) 70%)",
+          }}
+        />
       </div>
     </section>
   );

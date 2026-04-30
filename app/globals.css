@@ -448,3 +448,14 @@ body {
 [data-mini-showreel-status="active"] .mini-showreel-click {
   display: none;
 }
+
+/* CogniateLyraReveal — mobile/tablet override of the desktop clamp width.
+   Below the lg breakpoint (1024px) the video shrinks but keeps the same
+   edge mask and aspect ratio. Driven via --lyra-video-width so the inline
+   `style.width` on the <video> resolves the variable; this avoids needing
+   !important to outrank the inline style. */
+@media (max-width: 1023.98px) {
+  .lyra-video {
+    --lyra-video-width: min(90vw, 600px);
+  }
+}
