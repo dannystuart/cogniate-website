@@ -201,19 +201,40 @@ function Particles({ progress, logoSrc }: { progress: number; logoSrc: string })
     let cancelled = false;
     let geoLocal: THREE.BufferGeometry | null = null;
 
-    loadImageToImageData(logoSrc, 512).then((img) => {
-      if (cancelled) return;
-      const samples = sampleAlphaPixels(img, 6000);
-      console.log("[ParticleSwarm] sampled silhouette points:", samples.length / 2);
-      geoLocal = buildParticleGeometry(samples);
-      setGeometry(geoLocal);
-    });
+    loadImageToImageData(logoSrc, 512)
+      .then((img) => {
+        if (cancelled) return;
+        const samples = sampleAlphaPixels(img, 6000);
+        console.log("[ParticleSwarm] sampled silhouette points:", samples.length / 2);
+        geoLocal = buildParticleGeometry(samples);
+        // Functional setState: dispose the previous geometry (if any) when
+        // we replace it, so a logoSrc change or StrictMode double-mount
+        // doesn't leak GPU buffers.
+        setGeometry((prev) => {
+          prev?.dispose();
+          return geoLocal!;
+        });
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("[ParticleSwarm] failed to load logo:", err);
+        }
+      });
 
     return () => {
       cancelled = true;
       geoLocal?.dispose();
     };
   }, [logoSrc]);
+
+  // Dispose whatever geometry is currently in state on change/unmount.
+  // Pairs with the functional setState above to cover the unmount path,
+  // where the in-flight `geoLocal` cleanup wouldn't reach committed state.
+  useEffect(() => {
+    return () => {
+      geometry?.dispose();
+    };
+  }, [geometry]);
 
   // Dispose the material when the component unmounts.
   useEffect(() => {
