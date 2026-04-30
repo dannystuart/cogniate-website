@@ -223,10 +223,14 @@ export default function CogniateLyraReveal() {
       className="relative w-full bg-bg-secondary overflow-hidden"
     >
       <div ref={pinWrapperRef} className="relative min-h-screen w-full">
+        {/* Video — occupies upper 60% of viewport so the dust-Lyra at the
+            video's tail clearly sits ABOVE the typeset Lyra wordmark below.
+            object-cover with center 25% lifts the cloud focal point upward
+            within that band. */}
         <video
           ref={videoRef}
-          className="absolute inset-0 size-full object-cover"
-          style={{ objectPosition: "center 30%" }}
+          className="absolute left-0 right-0 top-0 h-[62vh] w-full object-cover"
+          style={{ objectPosition: "center 25%" }}
           muted
           playsInline
           preload="auto"
@@ -238,22 +242,22 @@ export default function CogniateLyraReveal() {
         </video>
 
         {/* Ambient blur — bridges the video into the text below. Sized from
-            Figma node 10:10271 (940×431); blurred to soften the boundary. */}
+            Figma node 10:10271 (940×431); blurred to soften the boundary
+            between the video band and the text stack. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2"
+          className="pointer-events-none absolute left-1/2 top-[55vh] -translate-x-1/2 -translate-y-1/2"
           style={{
             width: 940,
             height: 431,
             background:
-              "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 70%)",
+              "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 70%)",
             filter: "blur(60px)",
           }}
         />
 
-        {/* Text stack — anchored to the lower half so it sits below the
-            video's "Lyra" dust focal point at the top. */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center pt-[52vh]">
+        {/* Text stack — occupies lower 38% of viewport, content centred. */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[38vh] flex flex-col items-center justify-center">
           <h2
             className="lyra-wordmark text-center"
             style={{
@@ -299,6 +303,12 @@ export default function CogniateLyraReveal() {
             Your AI assistant to help you from idea to fully created course.
           </p>
 
+          {/* "Create. Design. Publish" — solid white text. Per-word spans
+              are inline-block (so each can carry its own opacity + transform
+              for the staggered reveal); inline-block defeats the parent's
+              background-clip-text, so the Figma's radial gradient mask is
+              dropped here in favour of a solid colour. The line still gets
+              a subtle dark-edge feel via the ambient blur sitting behind it. */}
           <h3
             className="lyra-cdp text-center"
             style={{
@@ -308,11 +318,7 @@ export default function CogniateLyraReveal() {
               fontSize: "clamp(36px, 5vw, 64px)",
               lineHeight: 1.1,
               letterSpacing: "-0.04em",
-              backgroundImage:
-                "radial-gradient(ellipse 65% 50% at 50% 50%, #ffffff 0%, rgba(212,209,218,0.75) 25%, rgba(169,163,180,0.5) 50%, rgba(82,71,105,0) 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
+              color: "rgba(255,255,255,0.95)",
             }}
           >
             <span
