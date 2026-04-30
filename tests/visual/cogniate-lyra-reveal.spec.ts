@@ -15,7 +15,7 @@ import { test, expect } from "@playwright/test";
 const cases = [
   { name: "pre-trigger", query: "0.0" },
   { name: "video-mid", query: "0.40" },
-  { name: "lyra-arriving", query: "0.83" },
+  { name: "lyra-arriving", query: "0.80" },
   { name: "all-revealed", query: "1.0" },
 ] as const;
 
