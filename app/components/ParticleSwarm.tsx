@@ -99,6 +99,16 @@ function CameraSizer() {
   return null;
 }
 
+/** Box–Muller — two uniforms → one standard-normal sample.
+ *  Used for the scattered start so there's no rectangular bounding edge
+ *  and the density at any one place stays low enough that the logo
+ *  silhouette is invisible at p=0. */
+function randNormal(): number {
+  const u = Math.max(Math.random(), 1e-7);
+  const v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
 /**
  * Build the THREE.BufferGeometry from a sampled silhouette.
  * Pulled out of the component so callers stay free of `Math.random()` during render
@@ -123,13 +133,16 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
     aLogoTarget[i * 3 + 2] = 0;
   }
 
-  // Scattered start: random positions in a wide rect around the logo.
-  const SCATTER_W = 1400;
-  const SCATTER_H = 600;
+  // Scattered start: 2D Gaussian centred at origin. Unbounded tail = no visible
+  // rectangular edge; wide sigma puts the bulk of particles outside the viewport
+  // so they truly fly in rather than just contracting. Density at the centre is
+  // low enough that the logo silhouette isn't pre-readable at progress 0.
+  const SCATTER_SIGMA_X = 1100;
+  const SCATTER_SIGMA_Y = 700;
   const positions = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
-    positions[i * 3 + 0] = (Math.random() - 0.5) * SCATTER_W;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * SCATTER_H;
+    positions[i * 3 + 0] = randNormal() * SCATTER_SIGMA_X;
+    positions[i * 3 + 1] = randNormal() * SCATTER_SIGMA_Y;
     positions[i * 3 + 2] = 0;
   }
 
@@ -137,9 +150,30 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
   const aDelay = new Float32Array(count);
   for (let i = 0; i < count; i++) aDelay[i] = Math.random();
 
+  // Per-particle base tint — soft pastel variations on white so the swarm
+  // reads as luminous dust with subtle depth, not flat white. Picked from a
+  // small palette so the average doesn't muddy. Phase 2's cluster tint will
+  // multiply on top of this.
+  const aBaseTint = new Float32Array(count * 3);
+  const variants: ReadonlyArray<readonly [number, number, number]> = [
+    [1.0, 1.0, 1.0], // pure white
+    [0.95, 0.97, 1.0], // cool white
+    [1.0, 0.97, 0.92], // warm white
+    [0.92, 0.96, 1.0], // pale blue
+    [1.0, 0.94, 0.96], // pale rose
+    [0.94, 1.0, 0.97], // pale mint
+  ];
+  for (let i = 0; i < count; i++) {
+    const v = variants[Math.floor(Math.random() * variants.length)];
+    aBaseTint[i * 3 + 0] = v[0];
+    aBaseTint[i * 3 + 1] = v[1];
+    aBaseTint[i * 3 + 2] = v[2];
+  }
+
   geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geo.setAttribute("aLogoTarget", new THREE.BufferAttribute(aLogoTarget, 3));
   geo.setAttribute("aDelay", new THREE.BufferAttribute(aDelay, 1));
+  geo.setAttribute("aBaseTint", new THREE.BufferAttribute(aBaseTint, 3));
   return geo;
 }
 
@@ -149,23 +183,39 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     uniforms: {
       uProgress: { value: 0 },
+      uTime: { value: 0 },
       uPixelRatio: { value: typeof window !== "undefined" ? window.devicePixelRatio : 1 },
       uSize: { value: 6.0 }, // base particle size in CSS px
     },
     vertexShader: /* glsl */ `
       attribute vec3 aLogoTarget;
       attribute float aDelay;
+      attribute vec3 aBaseTint;
       uniform float uProgress;
+      uniform float uTime;
       uniform float uPixelRatio;
       uniform float uSize;
+      varying vec3 vBaseTint;
 
       // Per-particle scattered → logo. Each particle has its own start window.
       void main() {
+        vBaseTint = aBaseTint;
+
         float d = aDelay * 0.30; // up to 30% phase offset
         float t = clamp((uProgress - d) / (0.25 - d), 0.0, 1.0);
         // Smoothstep gives a soft ease.
         t = smoothstep(0.0, 1.0, t);
         vec3 pos = mix(position, aLogoTarget, t);
+
+        // Always-on firefly drift — small amplitude, per-particle phase via
+        // aDelay so they don't drift in sync. Phase 2 may envelope this against
+        // formation state; for now it stays on through every progress value.
+        float driftPhase = aDelay * 6.2831853;
+        vec2 drift = vec2(
+          sin(uTime * 0.6 + driftPhase),
+          cos(uTime * 0.5 + driftPhase * 1.3)
+        );
+        pos.xy += drift * 3.5;
 
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
         gl_Position = projectionMatrix * mv;
@@ -174,13 +224,14 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
     `,
     fragmentShader: /* glsl */ `
       // Soft radial sprite, additive-blended.
+      varying vec3 vBaseTint;
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float r = length(uv);
         float a = smoothstep(0.5, 0.0, r);   // soft outer falloff
         float core = smoothstep(0.25, 0.0, r); // bright inner core
         float intensity = a * 0.4 + core * 1.0;
-        gl_FragColor = vec4(vec3(1.0) * intensity, intensity);
+        gl_FragColor = vec4(vBaseTint * intensity, intensity);
       }
     `,
     transparent: true,
@@ -243,13 +294,18 @@ function Particles({ progress, logoSrc }: { progress: number; logoSrc: string })
     };
   }, [material]);
 
-  // Push progress into the shader uniform every frame.
+  // Push progress + time into the shader uniforms every frame.
   // Object.assign is used here (rather than a direct property write) only to
   // satisfy react-hooks/immutability — `material` originates from useState()
   // and the lint rule flags any direct member-write on values it tracks.
-  // Per-frame allocation is one tiny object literal — well inside budget.
-  useFrame(() => {
+  // Per-frame allocation is two tiny object literals — well inside budget.
+  // `delta` from useFrame gives a real per-frame seconds value (vs. assuming 60fps),
+  // so the firefly drift speed stays steady on slower devices.
+  useFrame((_, delta) => {
     Object.assign(material.uniforms.uProgress, { value: progress });
+    Object.assign(material.uniforms.uTime, {
+      value: material.uniforms.uTime.value + delta,
+    });
   });
 
   if (!geometry) return null;
