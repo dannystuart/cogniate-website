@@ -97,7 +97,7 @@ export default function Footer() {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-[16px] text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
+                  className="text-body text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
                 >
                   {link.label}
                 </a>
@@ -106,14 +106,14 @@ export default function Footer() {
 
             {/* Legal column */}
             <div className="flex flex-col items-center md:items-start gap-[6px]">
-              <span className="text-[16px] text-white leading-[30px] font-normal">
+              <span className="text-body text-white leading-[30px] font-normal">
                 Community
               </span>
               {legalLinks.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-[16px] text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
+                  className="text-body text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
                 >
                   {link.label}
                 </a>

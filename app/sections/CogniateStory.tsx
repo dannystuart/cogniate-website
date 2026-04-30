@@ -18,11 +18,12 @@ gsap.registerPlugin(ScrollTrigger);
     Inner circle:  cx=869.3  cy=317.2  r=125.1
     Horiz line:    y=317.2, spans full width
 
-  Icon CENTERS as % of circles container (viewBox 1718×635):
-    Warning:   35.7%  68.0%   — sits on outer arc, ~8 o'clock
-    Flag:      52.7%  14.2%   — between 2nd/outer arc, ~1 o'clock
-    Lightbulb: 68.9%  58.7%   — right on outer arc, ~4 o'clock
-    Logo:      50.9%  50.0%   — centered
+  Icon CENTERS as % of circles container (viewBox 1718×635) — placed where
+  the points sit on the line background in the reference screenshot:
+    Warning:   32.0157%  49.9562%   — left intersection of horiz line × outer arc (9 o'clock)
+    Flag:      50.4449%   0.0957%   — top of outer arc (12 o'clock)
+    Lightbulb: 68.8741%  49.9562%   — right intersection of horiz line × outer arc (3 o'clock)
+    Logo:      50.5980%  49.9567%   — centred on inner-circle group
 */
 
 const stories = [
@@ -130,7 +131,7 @@ export default function CogniateStory() {
       </div>
 
       {/* === DESKTOP LAYOUT — wider container to match Figma proportions === */}
-      <div className="hidden lg:block relative mt-16 px-4">
+      <div className="hidden lg:block relative mt-32 xl:mt-40 px-4">
         <div
           className="relative mx-auto"
           style={{ maxWidth: 1700, aspectRatio: "1718 / 635" }}
@@ -157,11 +158,11 @@ export default function CogniateStory() {
             />
           </div>
 
-          {/* Warning Icon — outer arc, ~8 o'clock */}
+          {/* Warning Icon — left intersection of horiz line × outer arc (9 o'clock) */}
           <div
             ref={(el) => { iconRefs.current[0] = el; }}
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: "35.7%", top: "68%" }}
+            style={{ left: "32.0157%", top: "49.9562%" }}
           >
             <StoryIcon
               src="/assets/story-warning-icon.svg"
@@ -189,11 +190,11 @@ export default function CogniateStory() {
             </div>
           </div>
 
-          {/* Flag Icon — between 2nd/outer arc, ~1 o'clock */}
+          {/* Flag Icon — top of outer arc (12 o'clock) */}
           <div
             ref={(el) => { iconRefs.current[1] = el; }}
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: "52.7%", top: "14.2%" }}
+            style={{ left: "50.4449%", top: "0.0957%" }}
           >
             <StoryIcon
               src="/assets/story-flag-icon.svg"
@@ -221,11 +222,11 @@ export default function CogniateStory() {
             </div>
           </div>
 
-          {/* Lightbulb Icon — outer arc, ~4 o'clock */}
+          {/* Lightbulb Icon — right intersection of horiz line × outer arc (3 o'clock) */}
           <div
             ref={(el) => { iconRefs.current[2] = el; }}
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: "68.9%", top: "58.7%" }}
+            style={{ left: "68.8741%", top: "49.9562%" }}
           >
             <StoryIcon
               src="/assets/story-lightbulb-icon.svg"

@@ -17,15 +17,15 @@ export const BASELINE_TOKENS: TokenDef[] = [
   // Typography sizes
   { name: "h1 — mobile", cssVar: "--text-h1-mobile", group: "typography", baseline: "32px", kind: "size" },
   { name: "h1 — tablet", cssVar: "--text-h1-tablet", group: "typography", baseline: "52px", kind: "size" },
-  { name: "h1 — desktop", cssVar: "--text-h1-desktop", group: "typography", baseline: "80px", kind: "size" },
+  { name: "h1 — desktop", cssVar: "--text-h1-desktop", group: "typography", baseline: "68px", kind: "size" },
   { name: "h1 italic — mobile", cssVar: "--text-h1-italic-mobile", group: "typography", baseline: "40px", kind: "size" },
   { name: "h1 italic — tablet", cssVar: "--text-h1-italic-tablet", group: "typography", baseline: "64px", kind: "size" },
-  { name: "h1 italic — desktop", cssVar: "--text-h1-italic-desktop", group: "typography", baseline: "100px", kind: "size" },
+  { name: "h1 italic — desktop", cssVar: "--text-h1-italic-desktop", group: "typography", baseline: "88px", kind: "size" },
   { name: "h2 — mobile", cssVar: "--text-h2-mobile", group: "typography", baseline: "32px", kind: "size" },
   { name: "h2 — tablet", cssVar: "--text-h2-tablet", group: "typography", baseline: "48px", kind: "size" },
-  { name: "h2 — desktop", cssVar: "--text-h2-desktop", group: "typography", baseline: "64px", kind: "size" },
-  { name: "Body", cssVar: "--text-body", group: "typography", baseline: "18px", kind: "size" },
-  { name: "Body — large", cssVar: "--text-body-lg", group: "typography", baseline: "24px", kind: "size" },
+  { name: "h2 — desktop", cssVar: "--text-h2-desktop", group: "typography", baseline: "52px", kind: "size" },
+  { name: "Body", cssVar: "--text-body", group: "typography", baseline: "16px", kind: "size" },
+  { name: "Body — large", cssVar: "--text-body-lg", group: "typography", baseline: "20px", kind: "size" },
 
   // Typography meta
   { name: "h1 weight", cssVar: "--font-weight-h1", group: "typography", baseline: "600", kind: "weight" },

@@ -151,7 +151,7 @@ export default function Benefits() {
               </h3>
 
               {/* Description */}
-              <p className="text-white/80 text-[16px] md:text-[18px] lg:text-[20px] font-light leading-[1.3] tracking-[-0.2px] max-w-[430px]">
+              <p className="text-white/80 text-body md:text-body-lg font-light leading-[1.3] tracking-[-0.2px] max-w-[430px]">
                 {benefit.description}
               </p>
             </div>

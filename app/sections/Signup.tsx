@@ -74,12 +74,12 @@ export default function Signup() {
         {
           opacity: 1,
           x: 0,
+          duration: 1.6,
           ease: "power2.out",
           scrollTrigger: {
             trigger: section,
-            start: "top 50%",
-            end: "top 10%",
-            scrub: true,
+            start: "top 70%",
+            toggleActions: "play none none none",
           },
         }
       );
@@ -91,12 +91,12 @@ export default function Signup() {
         {
           opacity: 1,
           x: 0,
+          duration: 1.6,
           ease: "power2.out",
           scrollTrigger: {
             trigger: section,
-            start: "top 50%",
-            end: "top 10%",
-            scrub: true,
+            start: "top 70%",
+            toggleActions: "play none none none",
           },
         }
       );
@@ -157,7 +157,7 @@ export default function Signup() {
           className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[120%] h-[70%] pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(250, 103, 124, 0.18) 0%, transparent 70%)",
+              "radial-gradient(ellipse at center, rgba(250, 103, 124, 0.10) 0%, transparent 70%)",
           }}
         />
         {/* Text Block */}
@@ -168,7 +168,7 @@ export default function Signup() {
           <p className="mt-4 md:mt-6 text-[24px] md:text-[48px] lg:text-[64px] font-semibold leading-[1.15] tracking-[-0.04em] heading-gradient">
             Shape the future into learning.
           </p>
-          <p className="mt-4 md:mt-6 text-[16px] md:text-[20px] lg:text-[24px] font-light leading-[1.4] text-text-secondary max-w-[640px] mx-auto">
+          <p className="mt-4 md:mt-6 text-body md:text-body-lg font-light leading-[1.4] text-text-secondary max-w-[640px] mx-auto">
             Join the Cogniate community. Get early access. Influence the
             roadmap. Learn with the people building it.
           </p>
@@ -193,7 +193,7 @@ export default function Signup() {
                   height={24}
                   className="shrink-0"
                 />
-                <span className="text-[16px] md:text-[18px] text-white">
+                <span className="text-body md:text-body-lg text-white">
                   <span className="font-semibold">{offer.bold}</span>{" "}
                   <span className="font-light text-white">
                     {offer.regular}
@@ -280,7 +280,7 @@ export default function Signup() {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="text-[16px] text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
+                    className="text-body text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
                   >
                     {link.label}
                   </a>
@@ -289,14 +289,14 @@ export default function Signup() {
 
               {/* Legal column */}
               <div className="flex flex-col items-center md:items-start gap-[6px]">
-                <span className="text-[16px] text-white leading-[30px] font-normal">
+                <span className="text-body text-white leading-[30px] font-normal">
                   Community
                 </span>
                 {legalLinks.map((link) => (
                   <a
                     key={link.label}
                     href={link.href}
-                    className="text-[16px] text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
+                    className="text-body text-white leading-[30px] font-normal hover:text-white/80 transition-colors"
                   >
                     {link.label}
                   </a>

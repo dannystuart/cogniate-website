@@ -1,35 +1,38 @@
 "use client";
 
+import UnicornScene from "unicornstudio-react/next";
 import EyebrowBadge from "../components/EyebrowBadge";
 import ButtonPrimary from "../components/ButtonPrimary";
 import ButtonSecondary from "../components/ButtonSecondary";
 import NavMenu from "../components/NavMenu";
 import ScrollIndicator from "../components/ScrollIndicator";
 import VideoCard from "../components/VideoCard";
+import MiniShowreelLightbox from "../components/MiniShowreelLightbox";
 
 export default function Hero() {
   return (
     <section className="relative w-full overflow-hidden bg-bg-primary" style={{ minHeight: "max(100vh, 1000px)" }}>
       {/* ===== BACKGROUND LAYERS (absolute) ===== */}
 
-      {/* Video Background */}
-      <div className="absolute inset-0 z-0 mix-blend-color-dodge">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="/videos/hero-bg.mp4" type="video/mp4" />
-        </video>
+      {/* Unicorn Studio Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 scale-[1.1] origin-center">
+          <UnicornScene
+            projectId="ndGLW9kfOIsYe2ysw9Zb"
+            sdkUrl="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.1.11/dist/unicornStudio.umd.js"
+            width="100%"
+            height="100%"
+            lazyLoad={false}
+            production={false}
+          />
+        </div>
       </div>
 
       {/* Gradient BG Overlay */}
       <div className="absolute inset-0 z-[1] mix-blend-screen">
         <div className="w-full h-full backdrop-blur-[50px] bg-bg-primary/70 overflow-hidden">
-          {/* Element 1 - purple glow top right */}
-          <div className="absolute -top-[70%] right-[-20%] w-[110%] h-[120%]">
+          {/* Element 1 - purple glow top left */}
+          <div className="absolute -top-[70%] left-[-60%] w-[110%] h-[120%]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/element-1.svg"
@@ -38,7 +41,7 @@ export default function Hero() {
             />
           </div>
           {/* Element 2 - light overlay */}
-          <div className="absolute -top-[120%] right-[-10%] w-[90%] h-[160%] mix-blend-lighten">
+          <div className="absolute -top-[120%] left-[-50%] w-[90%] h-[160%] mix-blend-lighten">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/element-2.svg"
@@ -47,7 +50,7 @@ export default function Hero() {
             />
           </div>
           {/* Element 3 - bright overlay */}
-          <div className="absolute -top-[140%] right-[-10%] w-[90%] h-[160%]" style={{ mixBlendMode: "plus-lighter" }}>
+          <div className="absolute -top-[140%] left-[-50%] w-[90%] h-[160%]" style={{ mixBlendMode: "plus-lighter" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/element-3.svg"
@@ -81,7 +84,7 @@ export default function Hero() {
       <NavMenu />
 
       {/* ===== CONTENT (auto layout) ===== */}
-      <div className="relative z-10 flex flex-col items-center pt-[140px] lg:pt-[200px] pb-[160px] lg:pb-[240px] px-5 md:px-6 mx-auto max-w-[1330px]">
+      <div className="relative z-10 flex flex-col items-center pt-[220px] lg:pt-[280px] pb-[160px] lg:pb-[240px] px-5 md:px-6 mx-auto max-w-[1330px]">
         {/* Eyebrow */}
         <EyebrowBadge>AI POWERED COURSE CREATOR</EyebrowBadge>
 
@@ -101,7 +104,7 @@ export default function Hero() {
         {/* Content Row: Description + CTAs */}
         <div className="mt-8 lg:mt-[42px] flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-[124px]">
           {/* Description */}
-          <div className="text-center lg:text-right max-w-[420px] text-text-secondary text-lg lg:text-2xl tracking-[-0.01em]">
+          <div className="text-center lg:text-right max-w-[420px] text-text-secondary text-body lg:text-body-lg tracking-[-0.01em]">
             <p className="leading-[1.4] font-light mb-4">
               Cogniate is the world&apos;s first AI-native enterprise course
               authoring platform.
@@ -126,6 +129,9 @@ export default function Hero() {
 
       {/* ===== VIDEO CARD (absolute) ===== */}
       <VideoCard />
+
+      {/* ===== MINI SHOWREEL LIGHTBOX (fixed, full-screen) ===== */}
+      <MiniShowreelLightbox />
     </section>
   );
 }

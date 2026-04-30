@@ -35,17 +35,17 @@
   /* Typography sizes — three breakpoints */
   --text-h1-mobile: 32px;
   --text-h1-tablet: 52px;
-  --text-h1-desktop: 80px;
+  --text-h1-desktop: 68px;
   --text-h1-italic-mobile: 40px;
   --text-h1-italic-tablet: 64px;
-  --text-h1-italic-desktop: 100px;
+  --text-h1-italic-desktop: 88px;
   --text-h2-mobile: 32px;
   --text-h2-tablet: 48px;
-  --text-h2-desktop: 64px;
+  --text-h2-desktop: 52px;
 
   /* Body */
-  --text-body: 18px;
-  --text-body-lg: 24px;
+  --text-body: 16px;
+  --text-body-lg: 20px;
 
   /* Heading meta */
   --font-weight-h1: 600;
@@ -402,4 +402,49 @@ body {
   transform: scale(1) rotate(45deg);
   opacity: 1;
   pointer-events: auto;
+}
+
+/* ============================================
+   MINI SHOWREEL PLAYER
+   ============================================ */
+
+/* Dark overlay: hidden by default, fades in when active */
+.mini-showreel-lightbox__dark {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: auto;
+  transition: opacity 1s cubic-bezier(0.87, 0, 0.13, 1),
+    visibility 1s cubic-bezier(0.87, 0, 0.13, 1);
+}
+
+[data-mini-showreel-status="active"] .mini-showreel-lightbox__dark {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Poster (closed-state design): visible by default, fades out when active */
+.mini-showreel-poster {
+  opacity: 1;
+  transition: opacity 0.6s cubic-bezier(0.87, 0, 0.13, 1);
+}
+
+[data-mini-showreel-status="active"] .mini-showreel-poster {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Video: hidden by default, fades in when active */
+.mini-showreel-video {
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.87, 0, 0.13, 1);
+  transition-delay: 0.2s;
+}
+
+[data-mini-showreel-status="active"] .mini-showreel-video {
+  opacity: 1;
+}
+
+/* Click overlay: removed once player is active so the dark overlay handles closes */
+[data-mini-showreel-status="active"] .mini-showreel-click {
+  display: none;
 }

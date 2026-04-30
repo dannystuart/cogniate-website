@@ -48,6 +48,8 @@ export default function HowItWorks() {
   const vGlowRef = useRef<HTMLDivElement>(null);
   const hGlowLeftRef = useRef<HTMLDivElement>(null);
   const hGlowRightRef = useRef<HTMLDivElement>(null);
+  const hGlowBottomLeftRef = useRef<HTMLDivElement>(null);
+  const hGlowBottomRightRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const hasTriggeredRef = useRef(false);
 
@@ -55,9 +57,19 @@ export default function HowItWorks() {
     const vGlow = vGlowRef.current;
     const hGlowL = hGlowLeftRef.current;
     const hGlowR = hGlowRightRef.current;
+    const hGlowBL = hGlowBottomLeftRef.current;
+    const hGlowBR = hGlowBottomRightRef.current;
     const vLine = vLineRef.current;
 
-    if (!vGlow || !hGlowL || !hGlowR || !vLine) return;
+    if (
+      !vGlow ||
+      !hGlowL ||
+      !hGlowR ||
+      !hGlowBL ||
+      !hGlowBR ||
+      !vLine
+    )
+      return;
 
     if (timelineRef.current) {
       timelineRef.current.kill();
@@ -69,24 +81,23 @@ export default function HowItWorks() {
     gsap.set(vGlow, { top: "-120px", opacity: 0 });
     gsap.set(hGlowL, { opacity: 0, width: 0 });
     gsap.set(hGlowR, { opacity: 0, width: 0 });
+    gsap.set(hGlowBL, { opacity: 0, width: 0 });
+    gsap.set(hGlowBR, { opacity: 0, width: 0 });
 
-    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.0 });
+    // Plays once on viewport enter — lines stay lit after the animation completes.
+    const tl = gsap.timeline();
     timelineRef.current = tl;
 
-    // Fade in the vertical glow
+    // Vertical scanner: fade in, run down the line, fade out at the bottom
     tl.to(vGlow, { opacity: 1, duration: 0.3 });
-
-    // Move glow down the vertical line
     tl.to(vGlow, {
       top: vLineHeight - 40,
       duration: 1.8,
       ease: "power2.inOut",
     });
-
-    // Fade out vertical glow at bottom
     tl.to(vGlow, { opacity: 0, duration: 0.3 }, "-=0.3");
 
-    // Horizontal glows spread from center outward
+    // Top of eyebrow box: horizontal glow spreads from center
     tl.set(hGlowL, { opacity: 1, width: 0 });
     tl.set(hGlowR, { opacity: 1, width: 0 });
 
@@ -95,17 +106,21 @@ export default function HowItWorks() {
       duration: 1.2,
       ease: "power2.out",
     });
+    tl.to(hGlowR, { width: "50%", duration: 1.2, ease: "power2.out" }, "<");
+
+    // Bottom-of-cards horizontal glows spread from center and stay lit (after a small pause)
+    tl.set(hGlowBL, { opacity: 1, width: 0 }, "+=0.2");
+    tl.set(hGlowBR, { opacity: 1, width: 0 });
+    tl.to(hGlowBL, {
+      width: "50%",
+      duration: 1.2,
+      ease: "power2.out",
+    });
     tl.to(
-      hGlowR,
+      hGlowBR,
       { width: "50%", duration: 1.2, ease: "power2.out" },
       "<"
     );
-
-    // Fade out horizontal glows
-    tl.to([hGlowL, hGlowR], { opacity: 0, duration: 0.6 }, "-=0.3");
-
-    // Reset vertical glow position
-    tl.set(vGlow, { top: "-120px" });
   }, []);
 
   useEffect(() => {
@@ -123,14 +138,8 @@ export default function HowItWorks() {
       },
     });
 
-    const handleResize = () => {
-      if (hasTriggeredRef.current) buildTimeline();
-    };
-    window.addEventListener("resize", handleResize);
-
     return () => {
       trigger.kill();
-      window.removeEventListener("resize", handleResize);
       if (timelineRef.current) timelineRef.current.kill();
     };
   }, [buildTimeline]);
@@ -139,10 +148,10 @@ export default function HowItWorks() {
     <section
       ref={sectionRef}
       data-testid="how-it-works-section"
-      className="relative w-full bg-[#111112] overflow-hidden pt-20 pb-20 lg:pt-0 lg:pb-32"
+      className="relative w-full bg-[#111112] overflow-hidden pt-20 pb-20 lg:pt-0 lg:pb-[220px]"
     >
-      {/* ===== BACKGROUND GRID LINES ===== */}
-      <div className="absolute inset-x-0 top-[200px] lg:top-[260px] bottom-[60px] mx-auto max-w-[1554px] pointer-events-none">
+      {/* ===== BACKGROUND GRID LINES — extends above the top horizontal line and below the bottom one ===== */}
+      <div className="absolute inset-x-0 top-[80px] lg:top-[100px] bottom-[60px] lg:bottom-0 mx-auto max-w-[1554px] pointer-events-none">
         {/* Desktop grid */}
         <div className="hidden lg:flex justify-between h-full px-[40px]">
           {Array.from({ length: GRID_LINE_COUNT_DESKTOP }).map((_, i) => (
@@ -151,7 +160,7 @@ export default function HowItWorks() {
               className="w-px h-full"
               style={{
                 background:
-                  "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.06) 15%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.06) 85%, transparent 100%)",
+                  "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.04) 15%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.04) 85%, transparent 100%)",
               }}
             />
           ))}
@@ -171,6 +180,37 @@ export default function HowItWorks() {
         </div>
       </div>
 
+      {/* ===== CARD-EDGE & EYEBROW-BOX VERTICAL LINES ===== */}
+      <div className="hidden lg:block absolute inset-x-0 top-[100px] bottom-0 pointer-events-none">
+        <div className="relative h-full w-full max-w-[1280px] mx-auto px-6">
+          {/* Outer left edge — left of card 1 (also left edge of eyebrow box) */}
+          <div
+            className="absolute top-0 bottom-0 left-6 w-px"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent 0%, rgba(145,109,252,0.06) 8%, rgba(145,109,252,0.16) 50%, rgba(145,109,252,0.06) 92%, transparent 100%)",
+            }}
+          />
+          {/* Eyebrow-box right edge — at right edge of the 261px eyebrow */}
+          <div
+            className="absolute top-0 bottom-0 w-px"
+            style={{
+              left: 285,
+              background:
+                "linear-gradient(to bottom, transparent 0%, rgba(145,109,252,0.06) 8%, rgba(145,109,252,0.16) 50%, rgba(145,109,252,0.06) 92%, transparent 100%)",
+            }}
+          />
+          {/* Outer right edge — right of card 3 */}
+          <div
+            className="absolute top-0 bottom-0 right-6 w-px"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent 0%, rgba(145,109,252,0.06) 8%, rgba(145,109,252,0.16) 50%, rgba(145,109,252,0.06) 92%, transparent 100%)",
+            }}
+          />
+        </div>
+      </div>
+
       {/* ===== ANIMATED PURPLE GRADIENT LINES ===== */}
       <div className="absolute inset-x-0 top-0 bottom-0 mx-auto max-w-[1554px] pointer-events-none z-[5]">
         {/* Vertical base line — center top */}
@@ -180,7 +220,7 @@ export default function HowItWorks() {
           style={{ width: "3px", height: "260px" }}
         >
           {/* Base dim line */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(174,180,255,0.06)] to-[rgba(174,180,255,0.12)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(145,109,252,0.06)] to-[rgba(145,109,252,0.12)]" />
           {/* Animated glow */}
           <div
             ref={vGlowRef}
@@ -189,30 +229,28 @@ export default function HowItWorks() {
               width: "3px",
               height: "120px",
               background:
-                "linear-gradient(to bottom, transparent 0%, rgba(174,180,255,0.15) 20%, rgba(174,180,255,0.8) 50%, rgba(174,180,255,0.15) 80%, transparent 100%)",
+                "linear-gradient(to bottom, transparent 0%, rgba(145,109,252,0.15) 20%, rgba(145,109,252,0.8) 50%, rgba(145,109,252,0.15) 80%, transparent 100%)",
               boxShadow:
-                "0 0 12px 4px rgba(174,180,255,0.4), 0 0 30px 8px rgba(174,180,255,0.2)",
+                "0 0 12px 4px rgba(145,109,252,0.4), 0 0 30px 8px rgba(145,109,252,0.2)",
               opacity: 0,
             }}
           />
         </div>
 
-        {/* Horizontal base lines — at bottom of vertical line */}
+        {/* Top horizontal line — top edge of eyebrow box */}
         <div
           className="hidden lg:block absolute left-0 right-0"
           style={{ top: "260px", height: "3px" }}
         >
           {/* Base dim line — full width */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[rgba(174,180,255,0.04)] via-[rgba(174,180,255,0.1)] to-[rgba(174,180,255,0.04)]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[rgba(145,109,252,0.04)] via-[rgba(145,109,252,0.1)] to-[rgba(145,109,252,0.04)]" />
           {/* Left-spreading glow */}
           <div
             ref={hGlowLeftRef}
             className="absolute right-1/2 top-0 h-full pointer-events-none"
             style={{
               background:
-                "linear-gradient(to left, rgba(174,180,255,0.8), rgba(174,180,255,0.2) 40%, transparent 100%)",
-              boxShadow:
-                "0 0 12px 4px rgba(174,180,255,0.3), 0 0 30px 8px rgba(174,180,255,0.15)",
+                "linear-gradient(to left, rgba(145,109,252,0.8), rgba(145,109,252,0.2) 40%, transparent 100%)",
               width: 0,
               opacity: 0,
             }}
@@ -223,9 +261,45 @@ export default function HowItWorks() {
             className="absolute left-1/2 top-0 h-full pointer-events-none"
             style={{
               background:
-                "linear-gradient(to right, rgba(174,180,255,0.8), rgba(174,180,255,0.2) 40%, transparent 100%)",
-              boxShadow:
-                "0 0 12px 4px rgba(174,180,255,0.3), 0 0 30px 8px rgba(174,180,255,0.15)",
+                "linear-gradient(to right, rgba(145,109,252,0.8), rgba(145,109,252,0.2) 40%, transparent 100%)",
+              width: 0,
+              opacity: 0,
+            }}
+          />
+        </div>
+
+        {/* Eyebrow-bottom horizontal line — plain, non-illuminating line below the eyebrow box */}
+        <div
+          className="hidden lg:block absolute left-0 right-0 bg-white/8"
+          style={{ top: "316px", height: "1px" }}
+        />
+
+
+        {/* Bottom horizontal line — below cards (mirrors top line) */}
+        <div
+          className="hidden lg:block absolute left-0 right-0"
+          style={{ top: "1051px", height: "3px" }}
+        >
+          {/* Base dim line — full width */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[rgba(145,109,252,0.04)] via-[rgba(145,109,252,0.1)] to-[rgba(145,109,252,0.04)]" />
+          {/* Left-spreading glow */}
+          <div
+            ref={hGlowBottomLeftRef}
+            className="absolute right-1/2 top-0 h-full pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to left, rgba(145,109,252,0.8), rgba(145,109,252,0.2) 40%, transparent 100%)",
+              width: 0,
+              opacity: 0,
+            }}
+          />
+          {/* Right-spreading glow */}
+          <div
+            ref={hGlowBottomRightRef}
+            className="absolute left-1/2 top-0 h-full pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to right, rgba(145,109,252,0.8), rgba(145,109,252,0.2) 40%, transparent 100%)",
               width: 0,
               opacity: 0,
             }}
@@ -234,13 +308,13 @@ export default function HowItWorks() {
       </div>
 
       {/* ===== CONTENT ===== */}
-      <div className="relative z-10 mx-auto max-w-[1280px] px-5 md:px-6 lg:pt-[290px]">
-        {/* HOW IT WORKS eyebrow — sits below the horizontal animated line */}
+      <div className="relative z-10 mx-auto max-w-[1280px] px-5 md:px-6 lg:pt-[263px]">
+        {/* HOW IT WORKS eyebrow — tucked right underneath the top horizontal line */}
         <div
-          className="inline-flex items-center h-[52px] px-12 mb-8 lg:mb-16"
+          className="inline-flex items-center justify-center h-[52px] w-[261px] mb-8 lg:mb-16"
           style={{ backgroundColor: "rgba(211,204,255,0.05)" }}
         >
-          <span className="text-[16px] font-medium tracking-[4.8px] text-white/80">
+          <span className="text-[16px] font-medium tracking-[4.8px] text-white/80 whitespace-nowrap">
             HOW IT WORKS
           </span>
         </div>
@@ -310,7 +384,7 @@ export default function HowItWorks() {
                   {card.descLines.map((line, i) => (
                     <p
                       key={i}
-                      className="text-[20px] leading-[28px] font-medium"
+                      className="text-body-lg leading-[28px] font-normal"
                       style={{ color: "rgba(244,238,255,0.9)" }}
                     >
                       {line}
@@ -346,6 +420,7 @@ export default function HowItWorks() {
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );

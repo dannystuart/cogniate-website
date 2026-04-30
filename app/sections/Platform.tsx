@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import gsap from "gsap";
-import PlatformGradientBG from "../components/PlatformGradientBG";
+import PlatformVideoBG from "../components/PlatformVideoBG";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import PlatformCardAccordion, { type AccordionCardData } from "../components/PlatformCardAccordion";
 
@@ -271,7 +271,7 @@ function PlatformCard({
             : "lg:rounded-l-none lg:-ml-[60px] xl:-ml-[80px] lg:order-1"
         }`}
         style={{
-          height: "clamp(300px, 38vw, 600px)",
+          height: "clamp(280px, 34vw, 520px)",
           background: "#24202c",
         }}
       >
@@ -440,8 +440,8 @@ export default function Platform() {
       {/* Dynamic height based on card count — only applied on desktop */}
       <style>{`@media (min-width: 1024px) { [data-testid="platform-section"] { height: ${cards.length * 150}vh; } }`}</style>
       <div className="lg:sticky lg:top-0 lg:h-screen flex flex-col items-center overflow-hidden py-16 lg:py-0">
-        {/* ===== GRADIENT BACKGROUND (vector) ===== */}
-        <PlatformGradientBG />
+        {/* ===== VIDEO BACKGROUND (with top/bottom blend gradients) ===== */}
+        <PlatformVideoBG />
 
         {/* ===== SECTION TITLE ===== */}
         <h2
