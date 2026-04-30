@@ -16,7 +16,7 @@ import gsap from "gsap";
 */
 
 const CONTAINER_TOP = 572; // top of the description+CTA row
-const SCROLL_TEXT_OFFSET = 148; // → y=720, just above the fold
+const SCROLL_TEXT_OFFSET = 188; // → y=760, more clearance below the CTA row
 
 export default function ScrollIndicator() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,6 +109,7 @@ export default function ScrollIndicator() {
   return (
     <div
       ref={containerRef}
+      data-scroll-indicator
       className="hidden lg:block absolute left-1/2 -translate-x-1/2 z-10"
       style={{ top: `${CONTAINER_TOP}px`, bottom: 0 }}
     >

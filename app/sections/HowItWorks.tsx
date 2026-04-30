@@ -148,7 +148,7 @@ export default function HowItWorks() {
     <section
       ref={sectionRef}
       data-testid="how-it-works-section"
-      className="relative w-full bg-[#111112] overflow-hidden pt-20 pb-20 lg:pt-0 lg:pb-[220px]"
+      className="relative w-full bg-[#111112] overflow-hidden pt-20 pb-20 lg:pt-0 lg:pb-[220px] lg:-mt-[30vh]"
     >
       {/* ===== BACKGROUND GRID LINES — extends above the top horizontal line and below the bottom one ===== */}
       <div className="absolute inset-x-0 top-[80px] lg:top-[100px] bottom-[60px] lg:bottom-0 mx-auto max-w-[1554px] pointer-events-none">

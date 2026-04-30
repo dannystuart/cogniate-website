@@ -449,13 +449,28 @@ body {
   display: none;
 }
 
-/* CogniateLyraReveal — mobile/tablet override of the desktop clamp width.
-   Below the lg breakpoint (1024px) the video shrinks but keeps the same
-   edge mask and aspect ratio. Driven via --lyra-video-width so the inline
-   `style.width` on the <video> resolves the variable; this avoids needing
-   !important to outrank the inline style. */
-@media (max-width: 1023.98px) {
-  .lyra-video {
-    --lyra-video-width: min(90vw, 600px);
+/* Fade out the scroll indicator while the showreel modal is opening/open so its
+   animated glow doesn't visually clash with the FLIP-animated player. */
+[data-scroll-indicator] {
+  transition: opacity 0.3s ease;
+}
+
+body[data-mini-showreel-active="true"] [data-scroll-indicator] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* CogniateLyraReveal — pull the section up by 100vh on desktop so it overlaps
+   CogniateStory's pinSpacer tail. Without this overlap there's a 100vh window
+   of empty bg-secondary scroll between Story's unpin point and Reveal's pin
+   start (= the pinSpacer's `pinDistance + element.height` overhang minus
+   `pinDistance`). With the overlap, Reveal's video sits behind Story's pinned
+   wrapper and crossfades in as Story's tableau fades out — the user reads it
+   as the video sliding under Story. Story's wrapper carries z-10 (set in
+   CogniateStory.tsx) to stay on top of Reveal's bg during the overlap. */
+@media (min-width: 1024px) {
+  [data-testid="cogniate-lyra-reveal"] {
+    margin-top: -100vh;
   }
 }
+

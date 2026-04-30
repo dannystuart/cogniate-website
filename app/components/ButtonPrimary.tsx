@@ -38,7 +38,7 @@ export default function ButtonPrimary({
         aria-hidden
         className="pointer-events-none absolute inset-y-0 -left-[40%] w-[40%] rotate-12 bg-gradient-to-r from-transparent via-white/45 to-transparent opacity-0 transition-[transform,opacity] duration-700 ease-out group-hover:translate-x-[420%] group-hover:opacity-100"
       />
-      <span className="relative">{children}</span>
+      <span className="relative inline-flex items-center">{children}</span>
     </button>
   );
 }

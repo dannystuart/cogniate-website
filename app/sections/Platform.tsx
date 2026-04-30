@@ -6,6 +6,7 @@ import gsap from "gsap";
 import PlatformVideoBG from "../components/PlatformVideoBG";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import PlatformCardAccordion, { type AccordionCardData } from "../components/PlatformCardAccordion";
+import LoopingSvg from "../components/LoopingSvg";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -22,6 +23,9 @@ type StandardCard = {
   features: { label: string; description: string }[];
   layout: "content-left" | "content-right";
   glowColor: string;
+  image?: string;
+  imageAspectRatio?: string;
+  imageLoopDurationMs?: number;
 };
 
 type CardData = StandardCard | AccordionCardData;
@@ -56,6 +60,9 @@ const cards: CardData[] = [
     ],
     layout: "content-left" as const,
     glowColor: "rgba(250, 103, 124, 0.15)",
+    image: "/assets/combined-animated.svg",
+    imageAspectRatio: "2058 / 1465",
+    imageLoopDurationMs: 8000,
   },
   {
     id: "design",
@@ -78,6 +85,9 @@ const cards: CardData[] = [
     ],
     layout: "content-right" as const,
     glowColor: "rgba(183, 139, 249, 0.15)",
+    image: "/assets/style-course.svg",
+    imageAspectRatio: "1280 / 935",
+    imageLoopDurationMs: 12000,
   },
   {
     id: "publish",
@@ -107,12 +117,12 @@ const cards: CardData[] = [
       },
     ],
     visuals: [
-      "/assets/platform-card-gradient.png",
-      "/assets/platform-card-gradient.png",
-      "/assets/platform-card-gradient.png",
-      "/assets/platform-card-gradient.png",
+      "/assets/Accordion-Image-1.png",
+      "/assets/Accordion-Image-2.png",
+      "/assets/Accordion-Image-3.png",
+      "/assets/Accordion-Image-4.png",
     ],
-    coverImage: "/assets/platform-card-gradient.png",
+    coverImage: "/assets/Accordion-Image-1.png",
   },
 ];
 
@@ -271,16 +281,26 @@ function PlatformCard({
             : "lg:rounded-l-none lg:-ml-[60px] xl:-ml-[80px] lg:order-1"
         }`}
         style={{
-          height: "clamp(280px, 34vw, 520px)",
+          ...(card.imageAspectRatio
+            ? { aspectRatio: card.imageAspectRatio }
+            : { height: "clamp(280px, 34vw, 520px)" }),
           background: "#24202c",
         }}
       >
-        <Image
-          src="/assets/platform-card-gradient.png"
-          alt=""
-          fill
-          className="object-cover"
-        />
+        {card.image?.endsWith(".svg") ? (
+          <LoopingSvg
+            src={card.image}
+            durationMs={card.imageLoopDurationMs ?? 8000}
+            className="absolute inset-0 w-full h-full"
+          />
+        ) : (
+          <Image
+            src={card.image ?? "/assets/platform-card-gradient.png"}
+            alt=""
+            fill
+            className={card.imageAspectRatio ? "object-contain" : "object-cover"}
+          />
+        )}
       </div>
 
       {/* Card inset border */}

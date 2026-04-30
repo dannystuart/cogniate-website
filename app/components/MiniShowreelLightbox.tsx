@@ -12,7 +12,8 @@ export default function MiniShowreelLightbox() {
 
     const duration = 1;
     const ease = "expo.inOut";
-    const zIndex = 999;
+    const lbZIndex = 999;
+    const pwZIndex = 1000;
 
     let n = "";
     let isOpen = false;
@@ -84,11 +85,18 @@ export default function MiniShowreelLightbox() {
         .forEach((el) => el.setAttribute("data-mini-showreel-status", status));
     };
 
+    const setBodyActive = (active: boolean) => {
+      document.body.setAttribute(
+        "data-mini-showreel-active",
+        active ? "true" : "false"
+      );
+    };
+
     const zOn = () => {
       lbZ = lb?.style.zIndex || "";
       pwZ = pw?.style.zIndex || "";
-      if (lb) lb.style.zIndex = String(zIndex);
-      if (pw) pw.style.zIndex = String(zIndex);
+      if (lb) lb.style.zIndex = String(lbZIndex);
+      if (pw) pw.style.zIndex = String(pwZIndex);
     };
 
     const zOff = () => {
@@ -143,6 +151,7 @@ export default function MiniShowreelLightbox() {
 
       zOn();
       setStatus("active");
+      setBodyActive(true);
       playFor(n);
 
       const state = Flip.getState(pw);
@@ -151,7 +160,6 @@ export default function MiniShowreelLightbox() {
       Flip.from(state, {
         duration,
         ease,
-        absolute: true,
         scale: false,
       });
     };
@@ -166,8 +174,8 @@ export default function MiniShowreelLightbox() {
       const state = Flip.getState(pw);
 
       pw.style.cssText = pwCss;
-      if (lb) lb.style.zIndex = String(zIndex);
-      if (pw) pw.style.zIndex = String(zIndex);
+      if (lb) lb.style.zIndex = String(lbZIndex);
+      if (pw) pw.style.zIndex = String(pwZIndex);
 
       Flip.from(state, {
         duration,
@@ -176,6 +184,7 @@ export default function MiniShowreelLightbox() {
         scale: false,
         onComplete: () => {
           zOff();
+          setBodyActive(false);
           n = "";
           isOpen = false;
           lb = pw = tg = null;

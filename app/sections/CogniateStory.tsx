@@ -282,8 +282,15 @@ export default function CogniateStory() {
         desktop.style.setProperty("--tooltip-pointer", p > 0.65 ? "auto" : "none");
         // Final ramp — fades the entire desktop tableau (particle Canvas + icons +
         // logo + SVG circles) to 0 across the last 8% of the pin so CogniateLyraReveal
-        // can fade its video in without a visible pinch-cut at the section seam.
-        desktop.style.setProperty("--story-fadeout", String(ramp(p, 0.92, 1.0, 1, 0)));
+        // can crossfade its video in without a visible pinch-cut at the section seam.
+        // Set on documentElement (not just `desktop`) so CogniateLyraReveal's rAF loop
+        // can read it without traversing the pin-spacer that ScrollTrigger inserts
+        // around the desktop wrapper. Story's own elements still inherit it from the
+        // root via the cascade.
+        document.documentElement.style.setProperty(
+          "--story-fadeout",
+          String(ramp(p, 0.92, 1.0, 1, 0))
+        );
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -307,7 +314,7 @@ export default function CogniateStory() {
           across rather than just the SVG container's narrow aspect-ratio box. */}
       <div
         ref={desktopLayoutRef}
-        className="relative hidden min-h-screen flex-col items-center justify-center lg:flex"
+        className="relative z-10 hidden min-h-screen flex-col items-center justify-center lg:flex"
       >
         {/* Particle swarm — covers the whole wrapper; pointer-events:none so
             icons remain clickable. Mounted only after swarmTargets resolves on
@@ -318,7 +325,17 @@ export default function CogniateStory() {
         {swarmTargets && (
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ opacity: "var(--story-fadeout, 1)" }}
+            style={{
+              opacity: "var(--story-fadeout, 1)",
+              // Soft radial vignette so scattered particles fade toward the
+              // viewport edges rather than slamming into the section seam.
+              // Inner stop at 35% keeps the silhouette and icon halos fully
+              // opaque; outer stop at 100% lets corner particles dissolve.
+              maskImage:
+                "radial-gradient(ellipse 70% 80% at center, black 35%, transparent 100%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 70% 80% at center, black 35%, transparent 100%)",
+            }}
           >
             <ParticleSwarm
               scrollProgress={progressRef}
@@ -332,8 +349,13 @@ export default function CogniateStory() {
         )}
 
         {/* Heading — relative so it stacks above the absolutely-positioned
-            particles via DOM order (no z-index needed). */}
-        <div className="relative w-full max-w-[1330px] px-5 md:px-6">
+            particles via DOM order (no z-index needed). Fades with the rest of
+            the Story tableau via --story-fadeout so the title doesn't linger
+            on top of CogniateLyraReveal's video during the crossfade hand-off. */}
+        <div
+          className="relative w-full max-w-[1330px] px-5 md:px-6"
+          style={{ opacity: "var(--story-fadeout, 1)" }}
+        >
           <h2 className="story-heading landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]">
             Learning is a journey.
             <br />

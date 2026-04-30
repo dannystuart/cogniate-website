@@ -193,7 +193,7 @@ export default function Signup() {
                   height={24}
                   className="shrink-0"
                 />
-                <span className="text-body md:text-body-lg text-white">
+                <span className="text-sm md:text-body text-white">
                   <span className="font-semibold">{offer.bold}</span>{" "}
                   <span className="font-light text-white">
                     {offer.regular}

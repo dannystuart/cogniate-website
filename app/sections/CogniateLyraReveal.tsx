@@ -6,6 +6,17 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Frame sequence — the dust→Lyra transformation is shipped as 151 WebP stills
+// (~7MB total) instead of an H.264 video. The H.264 export had only 6 keyframes
+// across 757 frames, so every scroll-driven `currentTime` write meant decoding
+// up to ~125 frames before painting — the source of the original jerk. Canvas
+// + a pre-decoded image array makes every paint O(1).
+const FRAME_COUNT = 151;
+const FRAME_W = 1280;
+const FRAME_H = 1056;
+const frameSrc = (i: number) =>
+  `/assets/lyra-scrub/frame-${String(i + 1).padStart(3, "0")}.webp`;
+
 // Linear ramp from `(fromIn → fromOut)` of progress to `(toIn → toOut)` of value,
 // clamped at the ends. Drives every text reveal CSS variable.
 function ramp(p: number, fromIn: number, fromOut: number, toIn: number, toOut: number): number {
@@ -15,39 +26,17 @@ function ramp(p: number, fromIn: number, fromOut: number, toIn: number, toOut: n
   return toIn + (toOut - toIn) * t;
 }
 
-// Mobile + reduced-motion path: no pin, no scrub. Video (if provided) plays
-// once when the section enters the viewport; text staggers in via GSAP. Pass
-// `null` for `video` to skip playback (reduced-motion stays on the poster).
+// Mobile + reduced-motion path: no pin, no scrub. Paints the final frame as a
+// static destination image and runs the GSAP text-stagger timeline. The full
+// dust transformation is reserved for the desktop scroll experience.
 function setupNonPinnedReveal(
   section: HTMLElement,
   wrapper: HTMLDivElement,
-  video: HTMLVideoElement | null
+  paintFinalFrame: () => void
 ) {
-  // On mobile + reduced-motion the video doesn't need the desktop fade/dim
-  // envelope — park the variable at 1 so the default of 0 doesn't hide it.
   wrapper.style.setProperty("--video-opacity", "1");
+  paintFinalFrame();
 
-  if (video) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            // Autoplay-policy compliant: muted + playsInline. Failures are
-            // rare and non-fatal — the poster stays visible if denied.
-            void video.play().catch(() => {});
-            observer.disconnect();
-          }
-        }
-      },
-      { threshold: 0.25 }
-    );
-    observer.observe(section);
-  }
-
-  // Park the CSS variables at their resolved-end values so the rAF loop
-  // (which is still active in this branch) doesn't fight the GSAP timeline.
-  // The simpler choice: don't run the rAF loop in non-pinned mode. We do
-  // that by short-circuiting via the same isDesktop guard in its useEffect.
   gsap
     .timeline({
       scrollTrigger: { trigger: section, start: "top 70%", toggleActions: "play none none none" },
@@ -82,38 +71,112 @@ function setupNonPinnedReveal(
 // To slow the scrub: bump PIN_DISTANCE.
 // To delay text reveals: push the WORD_*/LYRA/TAGLINE ranges higher.
 const TIMING = {
-  PIN_DISTANCE: "+=250%",
-  // Video opacity envelope — fades up at the start (crossfade from Story's
-  // tableau), holds at 1 through the scrub, then dims to 0.3 so the typeset
-  // wordmark reads cleanly over it.
-  VIDEO_FADE_IN: [0.0, 0.05] as const,
-  VIDEO_DIM: [0.8, 0.88] as const, // 1 → 0.3
-  // Scrub window — currentTime maps from progress 0.05 → 0.78 onto 0 → duration.
-  VIDEO_SCRUB_START: 0.05,
-  VIDEO_SCRUB_END: 0.78,
-  // Text reveals.
-  LYRA: [0.72, 0.8] as const,
-  TAGLINE: [0.82, 0.88] as const,
-  WORD_CREATE: [0.88, 0.92] as const,
-  WORD_DESIGN: [0.92, 0.96] as const,
-  WORD_PUBLISH: [0.96, 1.0] as const,
+  PIN_DISTANCE: "+=220%",
+  // Canvas fade-out range. Starts BEFORE the scrub ends (0.50 vs 0.60) so the
+  // dust keeps advancing during the first ~0.10 of the fade — avoids the
+  // "freeze, then fade" feel. By the time the scrub parks on the final frame,
+  // the canvas is already two-thirds of the way to invisible.
+  // The fade-IN is not a Reveal-driven ramp — the canvas crossfades in as
+  // CogniateStory's --story-fadeout drops from 1 to 0.
+  VIDEO_FADE_OUT: [0.5, 0.65] as const, // 1 → 0
+  // Scrub window — frame index maps from progress 0.0 → 0.60 onto frame 0 →
+  // FRAME_COUNT-1. 60% of a 220% pin = 132vh of scroll for ~151 frames =
+  // ~0.87px per frame change at 1080p — visually continuous.
+  VIDEO_SCRUB_START: 0.0,
+  VIDEO_SCRUB_END: 0.6,
+  // Text reveals — LYRA only starts after VIDEO_FADE_OUT completes (0.65)
+  // with a small dark beat between, so the typeset wordmark never overlaps
+  // with a still-visible dust-Lyra.
+  LYRA: [0.73, 0.81] as const,
+  TAGLINE: [0.79, 0.86] as const,
+  WORD_CREATE: [0.87, 0.91] as const,
+  WORD_DESIGN: [0.91, 0.95] as const,
+  WORD_PUBLISH: [0.95, 1.0] as const,
 } as const;
 
-// Vertical position of the typeset wordmark, anchored to where the dust-Lyra
-// resolves inside the final video frame. Verified at ?lyraProgress=0.78 on a
-// 1728×1080 viewport — typeset centre lands on the dust cursive's visual centre.
-const LYRA_TOP_VH = 50;
+// Vertical position of the typeset wordmark. The full stack (wordmark →
+// tagline → CDP) is composed so its centroid sits near viewport centre —
+// wordmark above centre, tagline + CDP just below.
+const LYRA_TOP_VH = 35;
+
+// Top edge of the tagline + CDP block, sitting just below the wordmark.
+const LOWER_TEXT_TOP_VH = 45;
 
 export default function CogniateLyraReveal() {
   const sectionRef = useRef<HTMLElement>(null);
   const pinWrapperRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const framesRef = useRef<HTMLImageElement[]>([]);
+  const lastDrawnIdxRef = useRef(-1);
   const progressRef = useRef(0);
 
-  // Extract once so Task 7's mask-radius tuning can't drift between the
-  // standard and -webkit- prefixed forms.
-  const VIDEO_MASK =
-    "radial-gradient(ellipse 70% 70% at 50% 50%, black 45%, transparent 100%)";
+  // Preload the frame sequence on mount. On mobile / reduced-motion we only
+  // need the final frame (static destination image), so we skip the bulk
+  // download. On desktop we eagerly fetch all 151 frames so the scrub never
+  // catches an undecoded frame mid-scroll.
+  useEffect(() => {
+    const isDesktop =
+      typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+    const reduced =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const fullPreload = isDesktop && !reduced;
+
+    const indices = fullPreload
+      ? Array.from({ length: FRAME_COUNT }, (_, i) => i)
+      : [FRAME_COUNT - 1];
+
+    const frames = framesRef.current;
+    for (const i of indices) {
+      if (frames[i]) continue;
+      const img = new Image();
+      img.decoding = "async";
+      img.src = frameSrc(i);
+      frames[i] = img;
+    }
+
+    return () => {
+      framesRef.current = [];
+      lastDrawnIdxRef.current = -1;
+    };
+  }, []);
+
+  // Paint the frame at `idx` to the canvas. If that frame hasn't decoded yet,
+  // walk backward to the nearest loaded frame, then forward — guarantees a
+  // paint as long as ANY frame has loaded. Skips redundant draws when the
+  // index hasn't changed since the last paint.
+  const drawFrame = (idx: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const target = Math.max(0, Math.min(FRAME_COUNT - 1, idx));
+
+    let chosen = -1;
+    if (framesRef.current[target]?.naturalWidth) {
+      chosen = target;
+    } else {
+      for (let i = target - 1; i >= 0; i--) {
+        if (framesRef.current[i]?.naturalWidth) {
+          chosen = i;
+          break;
+        }
+      }
+      if (chosen === -1) {
+        for (let i = target + 1; i < FRAME_COUNT; i++) {
+          if (framesRef.current[i]?.naturalWidth) {
+            chosen = i;
+            break;
+          }
+        }
+      }
+    }
+    if (chosen === -1) return;
+    if (chosen === lastDrawnIdxRef.current) return;
+
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
+    const img = framesRef.current[chosen];
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    lastDrawnIdxRef.current = chosen;
+  };
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -130,25 +193,17 @@ export default function CogniateLyraReveal() {
         if (forced !== null) {
           const v = Math.max(0, Math.min(1, parseFloat(forced)));
           progressRef.current = v;
-          // rAF loop drives the CSS vars off progressRef, but the video is
-          // a separate decode pipeline — prime its currentTime once metadata
-          // arrives so the right frame paints without a flash.
-          const video = videoRef.current;
-          if (video) {
-            const seekToForcedFrame = () => {
-              // Match the rAF loop's scrub: progress 0.05 → 0.78 maps onto 0 → duration.
-              // Below 0.05 the video is mid-fade-in (currentTime stays at 0); above 0.78
-              // it parks on the last frame.
-              const span = TIMING.VIDEO_SCRUB_END - TIMING.VIDEO_SCRUB_START;
-              const tNorm = Math.min(Math.max((v - TIMING.VIDEO_SCRUB_START) / span, 0), 1);
-              const t = tNorm * video.duration;
-              if (Number.isFinite(t)) video.currentTime = t;
-            };
-            if (Number.isFinite(video.duration) && video.duration > 0) {
-              seekToForcedFrame();
-            } else {
-              video.addEventListener("loadedmetadata", seekToForcedFrame, { once: true });
-            }
+          // Paint the canvas at the frame this progress maps to, as soon as
+          // its image is ready. Mirrors the rAF loop's frame mapping below.
+          const span = TIMING.VIDEO_SCRUB_END - TIMING.VIDEO_SCRUB_START;
+          const tNorm = Math.min(Math.max((v - TIMING.VIDEO_SCRUB_START) / span, 0), 1);
+          const idx = Math.min(FRAME_COUNT - 1, Math.floor(tNorm * FRAME_COUNT));
+          const paint = () => drawFrame(idx);
+          const img = framesRef.current[idx];
+          if (img && img.naturalWidth) {
+            paint();
+          } else if (img) {
+            img.addEventListener("load", paint, { once: true });
           }
           return; // skip both the non-pinned path and the pinned ScrollTrigger
         }
@@ -157,22 +212,24 @@ export default function CogniateLyraReveal() {
       const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      // Mobile or reduced motion → no pin, no scrub. Reduced motion also
-      // skips video playback entirely (poster stays visible).
+      // Mobile or reduced motion → no pin, no scrub. Paints the final frame
+      // statically and runs the text-stagger GSAP timeline.
       if (!isDesktop || reduced) {
-        setupNonPinnedReveal(section, wrapper, reduced ? null : videoRef.current);
+        const paintFinalFrame = () => {
+          const finalImg = framesRef.current[FRAME_COUNT - 1];
+          if (finalImg && finalImg.naturalWidth) {
+            drawFrame(FRAME_COUNT - 1);
+          } else if (finalImg) {
+            finalImg.addEventListener("load", () => drawFrame(FRAME_COUNT - 1), { once: true });
+          }
+        };
+        setupNonPinnedReveal(section, wrapper, paintFinalFrame);
         return;
       }
 
       ScrollTrigger.create({
         trigger: wrapper,
-        // "top bottom" so the trigger activates the moment the section's top
-        // edge enters the bottom of the viewport — i.e., as Story finishes
-        // unpinning. Closes the ~1 viewport gap that "top top" produced
-        // between Story's --story-fadeout reaching 0 and Reveal's
-        // --video-opacity beginning to ramp up. Verified at progress sweep
-        // shows storyFadeout → 0 and videoOpacity → 1 in the same tick window.
-        start: "top bottom-=1",
+        start: "top top",
         end: TIMING.PIN_DISTANCE,
         pin: true,
         scrub: 1,
@@ -185,18 +242,14 @@ export default function CogniateLyraReveal() {
     return () => ctx.revert();
   }, []);
 
-  // rAF loop — reads progressRef each frame, drives video.currentTime
-  // (throttled to ~30 Hz to spare iOS Safari's video decode pipeline) and
-  // text-reveal CSS variables. Skipped on mobile + reduced-motion: those
-  // paths use a GSAP timeline that writes inline styles directly.
+  // rAF loop — reads progressRef each frame, redraws the canvas (only when the
+  // frame index changes) and updates text-reveal CSS variables. Skipped on
+  // mobile + reduced-motion: those paths use a GSAP timeline that writes inline
+  // styles directly, and the canvas is already parked on the final frame.
   useEffect(() => {
     const wrapper = pinWrapperRef.current;
-    const video = videoRef.current;
-    if (!wrapper || !video) return;
+    if (!wrapper) return;
 
-    // Skip the loop on mobile + reduced-motion paths (those use GSAP
-    // timelines and don't read these CSS variables). Test mode runs the
-    // loop regardless of viewport so `?lyraProgress=` works at any size.
     const isTestMode =
       process.env.NODE_ENV !== "production" &&
       new URL(window.location.href).searchParams.has("lyraProgress");
@@ -208,26 +261,26 @@ export default function CogniateLyraReveal() {
 
     let rafId = 0;
     let stopped = false;
-    let lastVideoTimeWrite = 0;
 
-    const tick = (now: number) => {
+    // CogniateStory's rAF loop sets --story-fadeout on document.documentElement
+    // so Reveal's canvas can read it without traversing ScrollTrigger's
+    // pin-spacer wrapping around Story's wrapper. Reveal's section is pulled
+    // up by 100vh (globals.css) so it overlaps Story's pinSpacer tail, and
+    // the canvas sits behind Story's pinned wrapper (z-10) — visible only as
+    // Story's tableau fades out (--story-fadeout 1 → 0).
+    const root = document.documentElement;
+
+    const tick = () => {
       if (stopped) return;
       if (!document.hidden) {
         const p = progressRef.current;
 
-        // iOS Safari restarts a decode pipeline on every currentTime write;
-        // 60 Hz can stall it. 30 Hz is plenty since source is 30 fps.
-        if (video.duration && now - lastVideoTimeWrite > 33) {
-          // Map progress [VIDEO_SCRUB_START, VIDEO_SCRUB_END] → [0, duration].
-          // Outside that window currentTime parks at 0 or duration respectively.
-          const span = TIMING.VIDEO_SCRUB_END - TIMING.VIDEO_SCRUB_START;
-          const tNorm = Math.min(Math.max((p - TIMING.VIDEO_SCRUB_START) / span, 0), 1);
-          const videoT = tNorm * video.duration;
-          if (Number.isFinite(videoT)) {
-            video.currentTime = videoT;
-            lastVideoTimeWrite = now;
-          }
-        }
+        // Map progress [VIDEO_SCRUB_START, VIDEO_SCRUB_END] → [0, FRAME_COUNT-1].
+        // Outside that window we park on frame 0 or the final frame respectively.
+        const span = TIMING.VIDEO_SCRUB_END - TIMING.VIDEO_SCRUB_START;
+        const tNorm = Math.min(Math.max((p - TIMING.VIDEO_SCRUB_START) / span, 0), 1);
+        const idx = Math.min(FRAME_COUNT - 1, Math.floor(tNorm * FRAME_COUNT));
+        drawFrame(idx);
 
         // Text reveals — opacity, vertical translation, and a subtle blur
         // that sharpens as the word arrives. Each element shares the same
@@ -243,12 +296,20 @@ export default function CogniateLyraReveal() {
         setReveal("w-design", TIMING.WORD_DESIGN);
         setReveal("w-publish", TIMING.WORD_PUBLISH);
 
-        // Video opacity envelope — combines the fade-in (0 → 1 over 0.0–0.05) with
-        // the dim (1 → 0.3 over 0.80–0.88). `dim` ramps the *amount* to subtract,
-        // so opacity = fadeIn − dim. Outside the windows the ramps clamp flat.
-        const videoFade = ramp(p, TIMING.VIDEO_FADE_IN[0], TIMING.VIDEO_FADE_IN[1], 0, 1);
-        const videoDim = ramp(p, TIMING.VIDEO_DIM[0], TIMING.VIDEO_DIM[1], 0, 0.7);
-        wrapper.style.setProperty("--video-opacity", String(videoFade - videoDim));
+        // Canvas opacity — driven by Story's --story-fadeout for the crossfade-in
+        // (canvas appears as Story's tableau fades out, 1 → 0), and by Reveal's
+        // own VIDEO_FADE_OUT for the dim-out (1 → 0 over the late progress
+        // window). Outside both ramps: 0 before Story starts fading, 1 between,
+        // 0 after Reveal's fade-out completes. Math.max guards against negative
+        // values when both contribute (e.g. test-mode edge cases).
+        const storyFadeoutStr = root.style.getPropertyValue("--story-fadeout");
+        const storyFadeout = storyFadeoutStr ? parseFloat(storyFadeoutStr) : 1;
+        const crossfadeIn = 1 - (Number.isFinite(storyFadeout) ? storyFadeout : 1);
+        const videoFadeOut = ramp(p, TIMING.VIDEO_FADE_OUT[0], TIMING.VIDEO_FADE_OUT[1], 0, 1);
+        wrapper.style.setProperty(
+          "--video-opacity",
+          String(Math.max(0, crossfadeIn - videoFadeOut))
+        );
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -267,34 +328,23 @@ export default function CogniateLyraReveal() {
       className="relative w-full bg-bg-secondary overflow-hidden"
     >
       <div ref={pinWrapperRef} className="relative min-h-screen w-full">
-        {/* Video — centred horizontally, anchored ~10vh from the top so there's
-            breathing room above. Width clamps so the source isn't stretched past
-            native (1584×1308). Edge-masked into bg-secondary on all four sides
-            so no rectangular boundary is visible. */}
-        <video
-          ref={videoRef}
-          className="lyra-video absolute left-1/2 top-[10vh] -translate-x-1/2"
-          style={{
-            width: "var(--lyra-video-width, clamp(760px, 60vw, 1100px))",
-            height: "auto",
-            objectFit: "contain",
-            maskImage: VIDEO_MASK,
-            WebkitMaskImage: VIDEO_MASK,
-            opacity: "var(--video-opacity, 0)",
-          }}
-          muted
-          playsInline
-          preload="auto"
-          poster="/assets/cogniate-scrub-lyra-poster.jpg"
-          disablePictureInPicture
-          disableRemotePlayback
-        >
-          <source src="/assets/cogniate-scrub-lyra-video.mp4" type="video/mp4" />
-        </video>
+        {/* Canvas — full viewport, object-cover via intrinsic dimensions. The
+            source frames already have dark edges baked into their gradient, so
+            they blend into bg-secondary without an explicit mask. Fades fully
+            out before the typeset wordmark arrives, so no edge-readability
+            concerns at the wordmark beat. */}
+        <canvas
+          ref={canvasRef}
+          width={FRAME_W}
+          height={FRAME_H}
+          className="lyra-canvas absolute inset-0 size-full"
+          style={{ objectFit: "cover", opacity: "var(--video-opacity, 0)" }}
+        />
 
-        {/* Halo — soft dark blurred ellipse sized to envelop the typeset wordmark
-            with margin. Shares --lyra-opacity so it never appears empty. Sits
-            directly behind the wordmark; no individual halos for tagline/CDP. */}
+        {/* Halo — soft dark blurred ellipse behind the wordmark. Subtle on
+            bg-secondary (dark on dark) but adds depth + visual weight when the
+            wordmark fades in. Shares --lyra-opacity so it tracks the wordmark
+            and never appears empty. */}
         <div
           aria-hidden
           className="lyra-halo pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -309,12 +359,11 @@ export default function CogniateLyraReveal() {
           }}
         />
 
-        {/* Typeset wordmark — overlays the dust-Lyra at the same screen position.
-            Sized so its baseline matches where the resolved dust lands in the
-            final video frame. Position anchor is LYRA_TOP_VH; verify by capturing
-            a still at ?lyraProgress=0.78 and overlaying the wordmark. The outer
-            div owns horizontal/vertical centring so the inner <h2> can drive its
-            Y reveal with a clean translateY (matches the halo + tagline pattern). */}
+        {/* Typeset wordmark — fades in at viewport centre after the canvas has
+            fully faded out, so it lands in clean dark space where the dust-Lyra
+            used to resolve. Outer div owns horizontal/vertical centring so the
+            inner <h2> can drive its Y reveal with a clean translateY (matches
+            the halo + tagline pattern). */}
         <div
           className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
           style={{ top: `${LYRA_TOP_VH}vh` }}
@@ -344,10 +393,13 @@ export default function CogniateLyraReveal() {
           </h2>
         </div>
 
-        {/* Tagline + CDP — sit in the lower viewport, inside the gradient bridge
-            zone where contrast is fine without per-element halos. Stacked
-            absolutely so they don't push other elements; centred horizontally. */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-[18vh] flex flex-col items-center">
+        {/* Tagline + CDP — sit just below the wordmark in the upper third, so
+            the whole stack reads as one block. Stacked absolutely so they don't
+            push other elements; centred horizontally. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 flex flex-col items-center"
+          style={{ top: `${LOWER_TEXT_TOP_VH}vh` }}
+        >
           <p
             className="lyra-tagline text-center"
             style={{
@@ -414,10 +466,11 @@ export default function CogniateLyraReveal() {
           </h3>
         </div>
 
-        {/* Gradient bridge — pulls the video's bottom edge into bg-secondary and
-            creates a continuous fade through the text region into HowItWorks.
-            bg-secondary (#101011) and HowItWorks's #111112 are visually identical,
-            so no complementary fade is needed at the section seam by default. */}
+        {/* Gradient bridge — softens the lower viewport into bg-secondary so
+            the tagline + CDP text sits in a dark gradient zone. With the canvas
+            fading fully to 0 before the wordmark beat, this is mostly cosmetic
+            (no rectangular edge to feather away from), but it deepens the
+            section's lower band and makes the seam into HowItWorks invisible. */}
         <div
           aria-hidden
           className="lyra-bridge pointer-events-none absolute inset-x-0 bottom-0"
