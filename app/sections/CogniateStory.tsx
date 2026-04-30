@@ -361,148 +361,147 @@ export default function CogniateStory() {
               crossfades into the Reveal's video at the section seam. */}
           <div className="absolute inset-0" style={{ opacity: "var(--story-fadeout, 1)" }}>
 
-          {/* Cogniate Logo — centered on circles */}
-          <div
-            data-particle-fade
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: "50.4%",
-              top: "50%",
-              width: 130,
-              height: 122,
-              opacity: "var(--logo-opacity, 0)",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/story-cogniate-logo.png"
-              alt="Cogniate"
-              className="size-full object-contain"
-              draggable={false}
-            />
-          </div>
-
-          {/* Warning Icon — left intersection of horiz line × outer arc (9 o'clock) */}
-          <div
-            data-particle-fade
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: "32.0157%",
-              top: "49.9562%",
-              opacity: "var(--icon-problem-opacity, 0)",
-              pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
-            }}
-          >
-            <StoryIcon
-              src="/assets/story-warning-icon.svg"
-              alt="Problem"
-              size={stories[0].size}
-              glowColor={stories[0].glowColor}
-              isActive={activeStory === "problem"}
-              onMouseEnter={() => setActiveStory("problem")}
-              onMouseLeave={() => setActiveStory(null)}
-            />
-            {/* Tooltip — to the left */}
+            {/* Cogniate Logo — centered on circles */}
             <div
-              className={`absolute right-[100%] top-1/2 -translate-y-1/2 mr-4 w-[340px] z-20 transition-all duration-300 pointer-events-none ${
-                activeStory === "problem"
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 translate-x-2"
-              }`}
+              data-particle-fade
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: "50.4%",
+                top: "50%",
+                width: 130,
+                height: 122,
+                opacity: "var(--logo-opacity, 0)",
+              }}
             >
-              <StoryTooltip
-                label={stories[0].label}
-                title={stories[0].title}
-                description={stories[0].description}
-                icon={stories[0].icon}
-                gradientFrom={stories[0].gradientFrom}
-                gradientTo={stories[0].gradientTo}
-                accentColor={stories[0].accentColor}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/story-cogniate-logo.png"
+                alt="Cogniate"
+                className="size-full object-contain"
+                draggable={false}
               />
             </div>
-          </div>
 
-          {/* Flag Icon — top of outer arc (12 o'clock) */}
-          <div
-            data-particle-fade
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: "50.4449%",
-              top: "0.0957%",
-              opacity: "var(--icon-mission-opacity, 0)",
-              pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
-            }}
-          >
-            <StoryIcon
-              src="/assets/story-flag-icon.svg"
-              alt="Mission"
-              size={stories[1].size}
-              glowColor={stories[1].glowColor}
-              isActive={activeStory === "mission"}
-              onMouseEnter={() => setActiveStory("mission")}
-              onMouseLeave={() => setActiveStory(null)}
-            />
-            {/* Tooltip — below */}
+            {/* Warning Icon — left intersection of horiz line × outer arc (9 o'clock) */}
             <div
-              className={`absolute left-1/2 -translate-x-1/2 top-[100%] mt-4 w-[340px] z-20 transition-all duration-300 pointer-events-none ${
-                activeStory === "mission"
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 -translate-y-2"
-              }`}
+              data-particle-fade
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: "32.0157%",
+                top: "49.9562%",
+                opacity: "var(--icon-problem-opacity, 0)",
+                pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
+              }}
             >
-              <StoryTooltip
-                label={stories[1].label}
-                title={stories[1].title}
-                description={stories[1].description}
-                icon={stories[1].icon}
-                gradientFrom={stories[1].gradientFrom}
-                gradientTo={stories[1].gradientTo}
-                accentColor={stories[1].accentColor}
+              <StoryIcon
+                src="/assets/story-warning-icon.svg"
+                alt="Problem"
+                size={stories[0].size}
+                glowColor={stories[0].glowColor}
+                isActive={activeStory === "problem"}
+                onMouseEnter={() => setActiveStory("problem")}
+                onMouseLeave={() => setActiveStory(null)}
               />
+              {/* Tooltip — to the left */}
+              <div
+                className={`absolute right-[100%] top-1/2 -translate-y-1/2 mr-4 w-[340px] z-20 transition-all duration-300 pointer-events-none ${
+                  activeStory === "problem"
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 translate-x-2"
+                }`}
+              >
+                <StoryTooltip
+                  label={stories[0].label}
+                  title={stories[0].title}
+                  description={stories[0].description}
+                  icon={stories[0].icon}
+                  gradientFrom={stories[0].gradientFrom}
+                  gradientTo={stories[0].gradientTo}
+                  accentColor={stories[0].accentColor}
+                />
+              </div>
+            </div>
+
+            {/* Flag Icon — top of outer arc (12 o'clock) */}
+            <div
+              data-particle-fade
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: "50.4449%",
+                top: "0.0957%",
+                opacity: "var(--icon-mission-opacity, 0)",
+                pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
+              }}
+            >
+              <StoryIcon
+                src="/assets/story-flag-icon.svg"
+                alt="Mission"
+                size={stories[1].size}
+                glowColor={stories[1].glowColor}
+                isActive={activeStory === "mission"}
+                onMouseEnter={() => setActiveStory("mission")}
+                onMouseLeave={() => setActiveStory(null)}
+              />
+              {/* Tooltip — below */}
+              <div
+                className={`absolute left-1/2 -translate-x-1/2 top-[100%] mt-4 w-[340px] z-20 transition-all duration-300 pointer-events-none ${
+                  activeStory === "mission"
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 -translate-y-2"
+                }`}
+              >
+                <StoryTooltip
+                  label={stories[1].label}
+                  title={stories[1].title}
+                  description={stories[1].description}
+                  icon={stories[1].icon}
+                  gradientFrom={stories[1].gradientFrom}
+                  gradientTo={stories[1].gradientTo}
+                  accentColor={stories[1].accentColor}
+                />
+              </div>
+            </div>
+
+            {/* Lightbulb Icon — right intersection of horiz line × outer arc (3 o'clock) */}
+            <div
+              data-particle-fade
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: "68.8741%",
+                top: "49.9562%",
+                opacity: "var(--icon-insight-opacity, 0)",
+                pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
+              }}
+            >
+              <StoryIcon
+                src="/assets/story-lightbulb-icon.svg"
+                alt="Insight"
+                size={stories[2].size}
+                glowColor={stories[2].glowColor}
+                isActive={activeStory === "insight"}
+                onMouseEnter={() => setActiveStory("insight")}
+                onMouseLeave={() => setActiveStory(null)}
+              />
+              {/* Tooltip — to the right */}
+              <div
+                className={`absolute left-[100%] top-1/2 -translate-y-1/2 ml-4 w-[340px] z-20 transition-all duration-300 pointer-events-none ${
+                  activeStory === "insight"
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-2"
+                }`}
+              >
+                <StoryTooltip
+                  label={stories[2].label}
+                  title={stories[2].title}
+                  description={stories[2].description}
+                  icon={stories[2].icon}
+                  gradientFrom={stories[2].gradientFrom}
+                  gradientTo={stories[2].gradientTo}
+                  accentColor={stories[2].accentColor}
+                />
+              </div>
             </div>
           </div>
-
-          {/* Lightbulb Icon — right intersection of horiz line × outer arc (3 o'clock) */}
-          <div
-            data-particle-fade
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: "68.8741%",
-              top: "49.9562%",
-              opacity: "var(--icon-insight-opacity, 0)",
-              pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
-            }}
-          >
-            <StoryIcon
-              src="/assets/story-lightbulb-icon.svg"
-              alt="Insight"
-              size={stories[2].size}
-              glowColor={stories[2].glowColor}
-              isActive={activeStory === "insight"}
-              onMouseEnter={() => setActiveStory("insight")}
-              onMouseLeave={() => setActiveStory(null)}
-            />
-            {/* Tooltip — to the right */}
-            <div
-              className={`absolute left-[100%] top-1/2 -translate-y-1/2 ml-4 w-[340px] z-20 transition-all duration-300 pointer-events-none ${
-                activeStory === "insight"
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 -translate-x-2"
-              }`}
-            >
-              <StoryTooltip
-                label={stories[2].label}
-                title={stories[2].title}
-                description={stories[2].description}
-                icon={stories[2].icon}
-                gradientFrom={stories[2].gradientFrom}
-                gradientTo={stories[2].gradientTo}
-                accentColor={stories[2].accentColor}
-              />
-            </div>
-          </div>
-          </div>
-          {/* end icon/logo layer */}
           </div>
           {/* end story-circles-container */}
         </div>
