@@ -98,6 +98,7 @@ function CameraSizer() {
 
 function Particles({ progress, logoSrc }: { progress: number; logoSrc: string }) {
   const [silhouette, setSilhouette] = useState<Float32Array | null>(null);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,6 +113,112 @@ function Particles({ progress, logoSrc }: { progress: number; logoSrc: string })
     };
   }, [logoSrc]);
 
-  if (!silhouette) return null;
-  return null; // particles next task
+  const geometry = useMemo(() => {
+    if (!silhouette) return null;
+    const count = silhouette.length / 2;
+    const geo = new THREE.BufferGeometry();
+
+    // Logo-target attribute: silhouette pixels normalised to scene coordinates.
+    // 512×512 source, we'll display at 130×122 px (matches CSS layout).
+    const LOGO_W = 130;
+    const LOGO_H = 122;
+    const aLogoTarget = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      // silhouette is in 0..512 px space, centre-aligned.
+      const sx = silhouette[i * 2];
+      const sy = silhouette[i * 2 + 1];
+      // Map [0,512] → [-LOGO_W/2, +LOGO_W/2] (and Y flipped: canvas Y is down, scene Y is up).
+      aLogoTarget[i * 3 + 0] = (sx / 512 - 0.5) * LOGO_W;
+      aLogoTarget[i * 3 + 1] = -(sy / 512 - 0.5) * LOGO_H;
+      aLogoTarget[i * 3 + 2] = 0;
+    }
+
+    // Scattered start: random positions in a wide rect around the logo.
+    const SCATTER_W = 1400;
+    const SCATTER_H = 600;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      positions[i * 3 + 0] = (Math.random() - 0.5) * SCATTER_W;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * SCATTER_H;
+      positions[i * 3 + 2] = 0;
+    }
+
+    // Per-particle delay (0..1) so the formation isn't synchronous.
+    const aDelay = new Float32Array(count);
+    for (let i = 0; i < count; i++) aDelay[i] = Math.random();
+
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute("aLogoTarget", new THREE.BufferAttribute(aLogoTarget, 3));
+    geo.setAttribute("aDelay", new THREE.BufferAttribute(aDelay, 1));
+    return geo;
+  }, [silhouette]);
+
+  const material = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uProgress: { value: 0 },
+        uPixelRatio: { value: typeof window !== "undefined" ? window.devicePixelRatio : 1 },
+        uSize: { value: 6.0 }, // base particle size in CSS px
+      },
+      vertexShader: /* glsl */ `
+        attribute vec3 aLogoTarget;
+        attribute float aDelay;
+        uniform float uProgress;
+        uniform float uPixelRatio;
+        uniform float uSize;
+
+        // Per-particle scattered → logo. Each particle has its own start window.
+        void main() {
+          float d = aDelay * 0.30; // up to 30% phase offset
+          float t = clamp((uProgress - d) / (0.25 - d), 0.0, 1.0);
+          // Smoothstep gives a soft ease.
+          t = smoothstep(0.0, 1.0, t);
+          vec3 pos = mix(position, aLogoTarget, t);
+
+          vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+          gl_Position = projectionMatrix * mv;
+          gl_PointSize = uSize * uPixelRatio;
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        // Soft radial sprite, additive-blended.
+        void main() {
+          vec2 uv = gl_PointCoord - 0.5;
+          float r = length(uv);
+          float a = smoothstep(0.5, 0.0, r);   // soft outer falloff
+          float core = smoothstep(0.25, 0.0, r); // bright inner core
+          float intensity = a * 0.4 + core * 1.0;
+          gl_FragColor = vec4(vec3(1.0) * intensity, intensity);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+  }, []);
+
+  // Dispose GPU resources on unmount / when geometry/material change.
+  useEffect(() => {
+    return () => {
+      geometry?.dispose();
+    };
+  }, [geometry]);
+
+  useEffect(() => {
+    return () => {
+      material.dispose();
+    };
+  }, [material]);
+
+  // Push progress into uniform every frame.
+  useFrame(() => {
+    if (matRef.current) matRef.current.uniforms.uProgress.value = progress;
+  });
+
+  if (!geometry) return null;
+  return (
+    <points geometry={geometry}>
+      <primitive ref={matRef} object={material} attach="material" />
+    </points>
+  );
 }
