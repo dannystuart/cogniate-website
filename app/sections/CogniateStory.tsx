@@ -154,6 +154,22 @@ export default function CogniateStory() {
       // branch only — no mount, no GPU work.
       if (!desktop) return;
 
+      // Dev-only test hook: ?particleProgress=0.30 forces progressRef to the
+      // given value and skips the pin, so Playwright can snapshot resting
+      // states deterministically. NODE_ENV gate keeps it out of production.
+      if (process.env.NODE_ENV !== "production") {
+        const forced = new URL(window.location.href).searchParams.get("particleProgress");
+        if (forced !== null) {
+          const v = Math.max(0, Math.min(1, parseFloat(forced)));
+          progressRef.current = v;
+          const rect = desktop
+            .querySelector<HTMLDivElement>(".story-circles-container")
+            ?.getBoundingClientRect();
+          if (rect) setSwarmTargets(computeSwarmTargets(rect));
+          return; // skip both the reduced-motion branch and the pinned trigger
+        }
+      }
+
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (reduced) {

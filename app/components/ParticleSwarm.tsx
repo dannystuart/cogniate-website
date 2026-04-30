@@ -509,7 +509,14 @@ function Particles({
     if (!u.uProgress || !u.uTime) return;
     const p = typeof progress === "number" ? progress : progress.current;
     Object.assign(u.uProgress, { value: p });
-    Object.assign(u.uTime, { value: u.uTime.value + delta });
+    // Freeze uTime in test mode (?particleProgress URL flag) so visual
+    // snapshots of the drifting blob stay deterministic.
+    const isTestMode =
+      typeof window !== "undefined" &&
+      new URL(window.location.href).searchParams.has("particleProgress");
+    if (!isTestMode) {
+      Object.assign(u.uTime, { value: u.uTime.value + delta });
+    }
   });
 
   if (!geometry) return null;
