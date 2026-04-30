@@ -46,6 +46,43 @@ export default function CogniateLyraReveal() {
     return () => ctx.revert();
   }, []);
 
+  // rAF loop — reads progressRef each frame, drives video.currentTime
+  // (throttled to ~30 Hz to spare iOS Safari's video decode pipeline). The
+  // text-reveal CSS variable writes get added in the next commit.
+  useEffect(() => {
+    const wrapper = pinWrapperRef.current;
+    const video = videoRef.current;
+    if (!wrapper || !video) return;
+
+    let rafId = 0;
+    let stopped = false;
+    let lastVideoTimeWrite = 0;
+
+    const tick = (now: number) => {
+      if (stopped) return;
+      if (!document.hidden) {
+        const p = progressRef.current;
+
+        // iOS Safari restarts a decode pipeline on every currentTime write;
+        // 60 Hz can stall it. 30 Hz is plenty since source is 30 fps.
+        if (video.duration && now - lastVideoTimeWrite > 33) {
+          const videoT = Math.min(p / TIMING.VIDEO_END, 1) * video.duration;
+          if (Number.isFinite(videoT)) {
+            video.currentTime = videoT;
+            lastVideoTimeWrite = now;
+          }
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   return (
     <section
       ref={sectionRef}
