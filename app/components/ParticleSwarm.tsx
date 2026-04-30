@@ -1,15 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
+export interface IconTarget {
+  /** Scene-space pixel position relative to inner-circle centre (origin). */
+  x: number;
+  y: number;
+  /** Cluster tint as linear 0..1 vec3 (e.g. salmon, lavender, mint). */
+  tint: [number, number, number];
+}
+
 export interface ParticleSwarmProps {
-  /** 0..1 — phase 1 prototype takes a plain number; phase 2 will widen to ref. */
-  scrollProgress: number;
+  /** 0..1 — accepts plain number (prototype scrubbing) or ref (production rAF). */
+  scrollProgress: number | MutableRefObject<number>;
   logoSrc: string;
+  /** Phase 2 inputs. When omitted (e.g. from /particle-test), defaults are used. */
+  iconTargets?: readonly IconTarget[];
+  blobCenter?: { x: number; y: number };
   className?: string;
 }
+
+/** Default targets for the prototype playground so /particle-test still works
+ *  standalone. Production CogniateStory always passes its own targets derived
+ *  from the rendered SVG container's bounding rect. */
+const DEFAULT_ICON_TARGETS: readonly IconTarget[] = [
+  { x: -307, y: 0, tint: [0.98, 0.404, 0.486] }, // problem (9 o'clock) — salmon
+  { x: 0, y: 317, tint: [0.675, 0.486, 0.945] }, // mission (12 o'clock) — lavender
+  { x: 307, y: 0, tint: [0.408, 0.914, 0.635] }, // insight (3 o'clock) — mint
+];
+const DEFAULT_BLOB_CENTER = { x: 0, y: -130 };
 
 /**
  * Sample N positions from an image's opaque pixels.
@@ -64,6 +85,8 @@ async function loadImageToImageData(src: string, size = 512): Promise<ImageData>
 export default function ParticleSwarm({
   scrollProgress,
   logoSrc,
+  iconTargets,
+  blobCenter,
   className,
 }: ParticleSwarmProps) {
   return (
@@ -75,7 +98,12 @@ export default function ParticleSwarm({
         gl={{ antialias: false, alpha: true }}
       >
         <CameraSizer />
-        <Particles progress={scrollProgress} logoSrc={logoSrc} />
+        <Particles
+          progress={scrollProgress}
+          logoSrc={logoSrc}
+          iconTargets={iconTargets ?? DEFAULT_ICON_TARGETS}
+          blobCenter={blobCenter ?? DEFAULT_BLOB_CENTER}
+        />
       </Canvas>
     </div>
   );
@@ -114,7 +142,11 @@ function randNormal(): number {
  * Pulled out of the component so callers stay free of `Math.random()` during render
  * (React 19's react-hooks/purity rule). All randomised attributes are baked here.
  */
-function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
+function buildParticleGeometry(
+  silhouette: Float32Array,
+  iconTargets: readonly IconTarget[],
+  blobCenter: { x: number; y: number }
+): THREE.BufferGeometry {
   const count = silhouette.length / 2;
   const geo = new THREE.BufferGeometry();
 
@@ -193,10 +225,94 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
     aBaseTint[i * 3 + 2] = v[2];
   }
 
+  // Pool assignment: 1800 problem / 1800 mission / 1800 insight / 600 ambient,
+  // shuffled so cluster particles aren't spatially correlated in the silhouette.
+  // The ambient pool stays at the logo through phase 2, then drifts to the blob.
+  const POOL_SIZES = [1800, 1800, 1800, 600] as const;
+  const aPool = new Float32Array(count);
+  {
+    let cursor = 0;
+    for (let p = 0; p < POOL_SIZES.length; p++) {
+      for (let k = 0; k < POOL_SIZES[p] && cursor < count; k++) {
+        aPool[cursor++] = p;
+      }
+    }
+    // Fisher–Yates shuffle so pool index doesn't correlate with silhouette order.
+    for (let i = count - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [aPool[i], aPool[j]] = [aPool[j], aPool[i]];
+    }
+  }
+
+  // Per-particle cluster routing — icon arrival, arc control point, blob target, tint.
+  const aIconTarget = new Float32Array(count * 3);
+  const aArcControl = new Float32Array(count * 3);
+  const aBlobTarget = new Float32Array(count * 3);
+  const aTint = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const pool = aPool[i];
+    const lx = aLogoTarget[i * 3 + 0];
+    const ly = aLogoTarget[i * 3 + 1];
+
+    // Icon target: cluster pools peel off; ambient pool stays at the logo.
+    // Per-particle jitter so the cluster blooms into a halo, not a single point.
+    if (pool < 3) {
+      const tgt = iconTargets[pool];
+      const jitter = 30;
+      aIconTarget[i * 3 + 0] = tgt.x + (Math.random() - 0.5) * jitter;
+      aIconTarget[i * 3 + 1] = tgt.y + (Math.random() - 0.5) * jitter;
+      aTint[i * 3 + 0] = tgt.tint[0];
+      aTint[i * 3 + 1] = tgt.tint[1];
+      aTint[i * 3 + 2] = tgt.tint[2];
+    } else {
+      aIconTarget[i * 3 + 0] = lx;
+      aIconTarget[i * 3 + 1] = ly;
+      aTint[i * 3 + 0] = 1;
+      aTint[i * 3 + 1] = 1;
+      aTint[i * 3 + 2] = 1;
+    }
+
+    // Arc control: midpoint between logo and icon, pushed perpendicular to the
+    // chord to enforce sweep direction. CCW for problem (0) and mission (1)
+    // — both at left/top — and CW for insight (2) at right. Ambient: no curve
+    // (control point coincides with logo target so the bezier is a no-op).
+    if (pool < 3) {
+      const ix = aIconTarget[i * 3 + 0];
+      const iy = aIconTarget[i * 3 + 1];
+      const ccw = pool < 2 ? 1 : -1;
+      const mx = (lx + ix) / 2;
+      const my = (ly + iy) / 2;
+      const cx = ix - lx;
+      const cy = iy - ly;
+      const chordLen = Math.hypot(cx, cy);
+      const ux = chordLen > 0 ? (-cy / chordLen) * ccw : 0;
+      const uy = chordLen > 0 ? (cx / chordLen) * ccw : 0;
+      const push = 80;
+      aArcControl[i * 3 + 0] = mx + ux * push;
+      aArcControl[i * 3 + 1] = my + uy * push;
+    } else {
+      aArcControl[i * 3 + 0] = lx;
+      aArcControl[i * 3 + 1] = ly;
+    }
+
+    // Blob target: cluster around blob centre. Cluster pools tighter, ambient
+    // pool slightly looser so the cloud reads as substantial rather than thin.
+    const blobR = pool < 3 ? 60 : 80;
+    const theta = Math.random() * Math.PI * 2;
+    const rad = Math.sqrt(Math.random()) * blobR;
+    aBlobTarget[i * 3 + 0] = blobCenter.x + Math.cos(theta) * rad;
+    aBlobTarget[i * 3 + 1] = blobCenter.y + Math.sin(theta) * rad;
+  }
+
   geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geo.setAttribute("aLogoTarget", new THREE.BufferAttribute(aLogoTarget, 3));
+  geo.setAttribute("aIconTarget", new THREE.BufferAttribute(aIconTarget, 3));
+  geo.setAttribute("aArcControl", new THREE.BufferAttribute(aArcControl, 3));
+  geo.setAttribute("aBlobTarget", new THREE.BufferAttribute(aBlobTarget, 3));
   geo.setAttribute("aDelay", new THREE.BufferAttribute(aDelay, 1));
+  geo.setAttribute("aPool", new THREE.BufferAttribute(aPool, 1));
   geo.setAttribute("aBaseTint", new THREE.BufferAttribute(aBaseTint, 3));
+  geo.setAttribute("aTint", new THREE.BufferAttribute(aTint, 3));
   return geo;
 }
 
@@ -211,27 +327,68 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
     },
     vertexShader: /* glsl */ `
       attribute vec3 aLogoTarget;
-      attribute float aDelay;
+      attribute vec3 aIconTarget;
+      attribute vec3 aArcControl;
+      attribute vec3 aBlobTarget;
       attribute vec3 aBaseTint;
+      attribute vec3 aTint;
+      attribute float aPool;
+      attribute float aDelay;
       uniform float uProgress;
       uniform float uTime;
       uniform float uPixelRatio;
       varying vec3 vBaseTint;
+      varying vec3 vClusterTint;
+      varying float vClusterMix;
 
-      // Per-particle scattered → logo. Each particle has its own start window.
+      // Choreography phase windows (constants kept here for readability):
+      //   Phase 1 (scatter→logo):   0.00 → 0.25 (per-particle delay shifts start)
+      //   Phase 2 (per-pool peel):  problem 0.35→0.50, mission 0.40→0.55, insight 0.45→0.60
+      //   Phase 3 (hold):           0.65 → 0.75
+      //   Phase 4 (drift to blob):  0.75 → 1.00
+      // Ambient pool (3) skips phase 2, stays at logo, then drifts to blob.
+
       void main() {
+        float p = uProgress;
         vBaseTint = aBaseTint;
+        vClusterTint = aTint;
 
-        float d = aDelay * 0.30; // up to 30% phase offset
-        float t = clamp((uProgress - d) / (0.25 - d), 0.0, 1.0);
-        // Smoothstep gives a soft ease.
-        t = smoothstep(0.0, 1.0, t);
-        vec3 pos = mix(position, aLogoTarget, t);
+        // PHASE 1: scattered → logo silhouette, with per-particle delay.
+        float d1 = aDelay * 0.30;
+        float t1 = clamp((p - d1) / (0.25 - d1), 0.0, 1.0);
+        t1 = smoothstep(0.0, 1.0, t1);
+        vec3 pos1 = mix(position, aLogoTarget, t1);
 
-        // Drift envelope: strong when scattered, smoothly fades to ~0 by p≈0.30.
-        // Jitter at the logo would blur the silhouette under additive blending,
-        // so the formation must end up still.
-        float driftMag = mix(9.0, 0.4, smoothstep(0.0, 0.30, uProgress));
+        // PHASE 2: per-pool peel-off via quadratic bezier (logo → arc → icon).
+        // Pool windows: 0.35–0.50, 0.40–0.55, 0.45–0.60. Ambient (3) skipped.
+        float poolStart = 0.35 + aPool * 0.05;
+        float poolEnd = poolStart + 0.15;
+        float t2 = smoothstep(poolStart, poolEnd, p);
+        t2 *= (1.0 - step(2.5, aPool));
+        vec3 bez =
+            (1.0 - t2) * (1.0 - t2) * aLogoTarget
+          + 2.0 * (1.0 - t2) * t2 * aArcControl
+          + t2 * t2 * aIconTarget;
+        // Phase 1 dominates until logo locks at p=0.25, then bezier takes over.
+        vec3 pos12 = mix(pos1, bez, step(0.25, p));
+
+        // PHASE 4: drift from resting position (icon for cluster pools, logo
+        // for ambient) to blob. step(0.5, t2) tells us which pool we are.
+        vec3 phase4Start = mix(aLogoTarget, aIconTarget, step(0.5, t2));
+        float t4 = smoothstep(0.75, 1.00, p);
+        vec3 pos4 = mix(phase4Start, aBlobTarget, t4);
+
+        // Final position: pos12 through phase 1–3, pos4 from 0.75 onwards.
+        vec3 pos = mix(pos12, pos4, step(0.75, p));
+
+        // Drift envelope — base curve goes 9 → 0.4 by p≈0.30 (Phase 1 fireflies
+        // settling), then humps lift it during peel-off (≈5.4 peak around p=0.45)
+        // and shift-down (≈4.4 peak around p=0.90), settling to ~2.4 in the blob
+        // so the cloud reads alive rather than locked.
+        float driftBase = mix(9.0, 0.4, smoothstep(0.0, 0.30, p));
+        float hump2 = smoothstep(0.30, 0.45, p) * (1.0 - smoothstep(0.50, 0.65, p));
+        float hump4 = smoothstep(0.75, 0.90, p) * (1.0 - smoothstep(0.95, 1.00, p) * 0.5);
+        float driftMag = driftBase + 5.0 * hump2 + 4.0 * hump4;
         float driftPhase = aDelay * 6.2831853;
         vec2 drift = vec2(
           sin(uTime * 1.4 + driftPhase),
@@ -239,24 +396,37 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
         );
         pos.xy += drift * driftMag;
 
+        // Cluster tint envelope: ramps in as the cluster peels off, ramps back
+        // out as it arrives at the icon halo. Ambient pool always 0 (white).
+        float tintIn  = smoothstep(poolStart, poolStart + 0.05, p);
+        float tintOut = smoothstep(poolEnd - 0.05, poolEnd, p);
+        vClusterMix = (tintIn - tintOut) * (1.0 - step(2.5, aPool));
+
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
         gl_Position = projectionMatrix * mv;
-        // Large diffuse particles when scattered → small crisp particles at logo.
-        // Same envelope as the drift magnitude so size and motion settle together.
-        float sizePx = mix(9.0, 3.5, smoothstep(0.0, 0.30, uProgress));
+
+        // Size envelope: 9 → 3.5 by p≈0.30 (Phase 1), flat through phases 2–3,
+        // tiny boost in the blob so the final cloud has volume.
+        float sizeBase = mix(9.0, 3.5, smoothstep(0.0, 0.30, p));
+        float sizeBlobBoost = smoothstep(0.85, 1.00, p) * 0.5;
+        float sizePx = sizeBase + sizeBlobBoost;
         gl_PointSize = sizePx * uPixelRatio;
       }
     `,
     fragmentShader: /* glsl */ `
-      // Soft radial sprite, additive-blended.
+      // Soft radial sprite, additive-blended. Base tint always present;
+      // cluster tint blends in via the vClusterMix envelope during peel-off.
       varying vec3 vBaseTint;
+      varying vec3 vClusterTint;
+      varying float vClusterMix;
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float r = length(uv);
-        float halo = smoothstep(0.5, 0.0, r);   // outer falloff
-        float core = smoothstep(0.18, 0.0, r);  // tighter core (was 0.25)
-        float intensity = halo * 0.25 + core * 1.0;  // less halo (was 0.4)
-        gl_FragColor = vec4(vBaseTint * intensity, intensity);
+        float halo = smoothstep(0.5, 0.0, r);
+        float core = smoothstep(0.18, 0.0, r);
+        float intensity = halo * 0.25 + core * 1.0;
+        vec3 col = mix(vBaseTint, vClusterTint, vClusterMix);
+        gl_FragColor = vec4(col * intensity, intensity);
       }
     `,
     transparent: true,
@@ -265,7 +435,17 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
   });
 }
 
-function Particles({ progress, logoSrc }: { progress: number; logoSrc: string }) {
+function Particles({
+  progress,
+  logoSrc,
+  iconTargets,
+  blobCenter,
+}: {
+  progress: number | MutableRefObject<number>;
+  logoSrc: string;
+  iconTargets: readonly IconTarget[];
+  blobCenter: { x: number; y: number };
+}) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   // Lazy initialiser so the material is constructed exactly once at mount.
   // Pure (no Math.random); readable in render; survives re-renders.
@@ -281,8 +461,7 @@ function Particles({ progress, logoSrc }: { progress: number; logoSrc: string })
       .then((img) => {
         if (cancelled) return;
         const samples = sampleAlphaPixels(img, 6000);
-        console.log("[ParticleSwarm] sampled silhouette points:", samples.length / 2);
-        geoLocal = buildParticleGeometry(samples);
+        geoLocal = buildParticleGeometry(samples, iconTargets, blobCenter);
         // Functional setState: dispose the previous geometry (if any) when
         // we replace it, so a logoSrc change or StrictMode double-mount
         // doesn't leak GPU buffers.
@@ -301,7 +480,7 @@ function Particles({ progress, logoSrc }: { progress: number; logoSrc: string })
       cancelled = true;
       geoLocal?.dispose();
     };
-  }, [logoSrc]);
+  }, [logoSrc, iconTargets, blobCenter]);
 
   // Dispose whatever geometry is currently in state on change/unmount.
   // Pairs with the functional setState above to cover the unmount path,
@@ -327,7 +506,9 @@ function Particles({ progress, logoSrc }: { progress: number; logoSrc: string })
   // `delta` from useFrame gives a real per-frame seconds value (vs. assuming 60fps),
   // so the firefly drift speed stays steady on slower devices.
   useFrame((_, delta) => {
-    Object.assign(material.uniforms.uProgress, { value: progress });
+    if (typeof document !== "undefined" && document.hidden) return;
+    const p = typeof progress === "number" ? progress : progress.current;
+    Object.assign(material.uniforms.uProgress, { value: p });
     Object.assign(material.uniforms.uTime, {
       value: material.uniforms.uTime.value + delta,
     });
