@@ -15,6 +15,65 @@ function ramp(p: number, fromIn: number, fromOut: number, toIn: number, toOut: n
   return toIn + (toOut - toIn) * t;
 }
 
+// Mobile + reduced-motion path: no pin, no scrub. Video (if provided) plays
+// once when the section enters the viewport; text staggers in via GSAP. Pass
+// `null` for `video` to skip playback (reduced-motion stays on the poster).
+function setupNonPinnedReveal(
+  section: HTMLElement,
+  wrapper: HTMLDivElement,
+  video: HTMLVideoElement | null
+) {
+  if (video) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            // Autoplay-policy compliant: muted + playsInline. Failures are
+            // rare and non-fatal — the poster stays visible if denied.
+            void video.play().catch(() => {});
+            observer.disconnect();
+          }
+        }
+      },
+      { threshold: 0.25 }
+    );
+    observer.observe(section);
+  }
+
+  // Park the CSS variables at their resolved-end values so the rAF loop
+  // (which is still active in this branch) doesn't fight the GSAP timeline.
+  // The simpler choice: don't run the rAF loop in non-pinned mode. We do
+  // that by short-circuiting via the same isDesktop guard in its useEffect.
+  gsap
+    .timeline({
+      scrollTrigger: { trigger: section, start: "top 70%", toggleActions: "play none none none" },
+    })
+    .fromTo(
+      wrapper.querySelector(".lyra-wordmark"),
+      { opacity: 0, y: 16, filter: "blur(2px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power2.out" }
+    )
+    .fromTo(
+      wrapper.querySelector(".lyra-tagline"),
+      { opacity: 0, y: 16, filter: "blur(2px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power2.out" },
+      "-=0.4"
+    )
+    .fromTo(
+      wrapper.querySelectorAll(".lyra-cdp [data-word]"),
+      { opacity: 0, y: 16, filter: "blur(2px)" },
+      {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        duration: 0.5,
+        ease: "power2.out",
+        stagger: 0.15,
+      },
+      "-=0.3"
+    );
+}
+
 // Single source of truth for everything tunable.
 // To slow the scrub: bump PIN_DISTANCE.
 // To delay text reveals: push the WORD_*/LYRA/TAGLINE ranges higher.
@@ -40,6 +99,16 @@ export default function CogniateLyraReveal() {
     if (!section || !wrapper) return;
 
     const ctx = gsap.context(() => {
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Mobile or reduced motion → no pin, no scrub. Reduced motion also
+      // skips video playback entirely (poster stays visible).
+      if (!isDesktop || reduced) {
+        setupNonPinnedReveal(section, wrapper, reduced ? null : videoRef.current);
+        return;
+      }
+
       ScrollTrigger.create({
         trigger: wrapper,
         start: "top top",
@@ -56,12 +125,17 @@ export default function CogniateLyraReveal() {
   }, []);
 
   // rAF loop — reads progressRef each frame, drives video.currentTime
-  // (throttled to ~30 Hz to spare iOS Safari's video decode pipeline). The
-  // text-reveal CSS variable writes get added in the next commit.
+  // (throttled to ~30 Hz to spare iOS Safari's video decode pipeline) and
+  // text-reveal CSS variables. Skipped on mobile + reduced-motion: those
+  // paths use a GSAP timeline that writes inline styles directly.
   useEffect(() => {
     const wrapper = pinWrapperRef.current;
     const video = videoRef.current;
     if (!wrapper || !video) return;
+
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!isDesktop || reduced) return;
 
     let rafId = 0;
     let stopped = false;
