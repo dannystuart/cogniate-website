@@ -155,13 +155,13 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
   // small palette so the average doesn't muddy. Phase 2's cluster tint will
   // multiply on top of this.
   const aBaseTint = new Float32Array(count * 3);
-  // Palette weighted 50/30/15/5 (white / lavender / salmon / mint), with a
-  // saturation gradient inside each colour so depth reads across particles —
-  // some barely-tinted, some pronounced. Lavender values come from the design
-  // system mission glow rgb(172,124,241) mixed with white at varying ratios.
+  // Palette weighted 35/45/15/5 (white / lavender / salmon / mint). Lavender
+  // bumped both in count and in saturation so the design-system mission tint
+  // actually reads under additive blending — a saturation-ramped distribution
+  // gives depth (some barely-tinted, some near-full lavender). Lavender values
+  // are mixes of design-system mission glow rgb(172,124,241) with white.
   const variants: ReadonlyArray<readonly [number, number, number]> = [
-    // White majority (10 of 20 = 50%)
-    [1.0, 1.0, 1.0],
+    // White majority (7 of 20 = 35%)
     [1.0, 1.0, 1.0],
     [1.0, 1.0, 1.0],
     [1.0, 1.0, 1.0],
@@ -169,16 +169,17 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
     [0.97, 0.98, 1.0], // cool white
     [0.97, 0.98, 1.0],
     [1.0, 0.98, 0.95], // warm white
-    [1.0, 0.98, 0.95],
-    [0.96, 0.97, 1.0], // very faint cool
-    // Lavender saturation ramp (6 of 20 = 30%) — pale → bold for depth
+    // Lavender saturation ramp (9 of 20 = 45%) — biased toward bold
     [0.93, 0.88, 0.99], // 20% lavender mix — barely there
-    [0.88, 0.80, 0.98], // 35% mix — soft
-    [0.88, 0.80, 0.98],
-    [0.83, 0.73, 0.97], // 50% mix — mid
-    [0.78, 0.66, 0.96], // 70% mix — pronounced
-    [0.74, 0.60, 0.95], // 80% mix — bold (still soft against bright sprite)
-    // Salmon ramp (3 of 20 = 15%) — same depth principle
+    [0.86, 0.79, 0.98], // 40% mix — soft
+    [0.81, 0.70, 0.97], // 55% mix — clearly tinted
+    [0.81, 0.70, 0.97],
+    [0.75, 0.62, 0.96], // 75% mix — bold
+    [0.75, 0.62, 0.96],
+    [0.71, 0.56, 0.95], // 85% mix — strong
+    [0.71, 0.56, 0.95],
+    [0.68, 0.49, 0.94], // 95% mix — near full design-system lavender
+    // Salmon ramp (3 of 20 = 15%)
     [0.97, 0.88, 0.89], // 25% mix
     [0.94, 0.80, 0.82], // 50% mix
     [0.91, 0.71, 0.74], // 75% mix
