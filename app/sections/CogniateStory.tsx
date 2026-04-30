@@ -1,12 +1,68 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import StoryIcon from "../components/StoryIcon";
 import StoryTooltip from "../components/StoryTooltip";
+import type { IconTarget } from "../components/ParticleSwarm";
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Three.js / R3F is browser-only; defer SSR.
+const ParticleSwarm = dynamic(
+  () => import("../components/ParticleSwarm"),
+  { ssr: false }
+);
+
+// Anchor positions inside the SVG container (% of container box). Mirrors the
+// existing absolute-positioned children below — kept in one place so the
+// particle target maths and the DOM layout can't diverge.
+const PERCENT_ANCHORS = {
+  logoCenter: { left: 50.4, top: 50.0 },
+  problem: { left: 32.0157, top: 49.9562 },
+  mission: { left: 50.4449, top: 0.0957 },
+  insight: { left: 68.8741, top: 49.9562 },
+  blob: { left: 50.4, top: 76.0 },
+} as const;
+
+const CLUSTER_TINTS: Record<"problem" | "mission" | "insight", [number, number, number]> = {
+  problem: [0.98, 0.404, 0.486], // salmon — rgba(250,103,124)
+  mission: [0.675, 0.486, 0.945], // lavender — rgba(172,124,241)
+  insight: [0.408, 0.914, 0.635], // mint — rgba(104,233,162)
+};
+
+/** Convert the layout's percentage anchors into scene units (CSS pixels relative
+ *  to the inner-circle centre, scene Y up). Recomputed on ScrollTrigger refresh. */
+function computeSwarmTargets(
+  rect: DOMRect
+): { iconTargets: IconTarget[]; blobCenter: { x: number; y: number } } {
+  const { width, height } = rect;
+  const centerLeft = (PERCENT_ANCHORS.logoCenter.left / 100) * width;
+  const centerTop = (PERCENT_ANCHORS.logoCenter.top / 100) * height;
+  const px = (left: number, top: number) => ({
+    x: (left / 100) * width - centerLeft,
+    y: -((top / 100) * height - centerTop),
+  });
+  return {
+    iconTargets: [
+      { ...px(PERCENT_ANCHORS.problem.left, PERCENT_ANCHORS.problem.top), tint: CLUSTER_TINTS.problem },
+      { ...px(PERCENT_ANCHORS.mission.left, PERCENT_ANCHORS.mission.top), tint: CLUSTER_TINTS.mission },
+      { ...px(PERCENT_ANCHORS.insight.left, PERCENT_ANCHORS.insight.top), tint: CLUSTER_TINTS.insight },
+    ],
+    blobCenter: px(PERCENT_ANCHORS.blob.left, PERCENT_ANCHORS.blob.top),
+  };
+}
+
+/** Linear ramp from `(fromIn → fromOut)` of progress to `(toIn → toOut)` of value,
+ *  clamped at the ends. Used by the rAF loop to drive CSS variables. */
+function ramp(p: number, fromIn: number, fromOut: number, toIn: number, toOut: number): number {
+  if (p <= fromIn) return toIn;
+  if (p >= fromOut) return toOut;
+  const t = (p - fromIn) / (fromOut - fromIn);
+  return toIn + (toOut - toIn) * t;
+}
 
 /*
   Figma reference (section 1728×1137, circles SVG viewBox 1718×635):
@@ -63,14 +119,20 @@ export default function CogniateStory() {
   const [activeStory, setActiveStory] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const iconRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const desktopLayoutRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef(0);
+  const [swarmTargets, setSwarmTargets] = useState<ReturnType<
+    typeof computeSwarmTargets
+  > | null>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     const heading = headingRef.current;
+    const desktop = desktopLayoutRef.current;
     if (!section || !heading) return;
 
     const ctx = gsap.context(() => {
+      // Heading fade — unchanged from the original.
       gsap.fromTo(
         heading,
         { opacity: 0, y: 30 },
@@ -87,29 +149,87 @@ export default function CogniateStory() {
         }
       );
 
-      iconRefs.current.forEach((icon, i) => {
-        if (!icon) return;
+      // Below this point: desktop-only choreography. Mobile bypasses the entire
+      // particle system because ParticleSwarm is mounted inside the lg:block
+      // branch only — no mount, no GPU work.
+      if (!desktop) return;
+
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (reduced) {
+        // Reduced motion: skip the pin and the particles. Fade logo + icons in
+        // via a simple top:70% trigger and park progress at the end state so
+        // any mounted ParticleSwarm renders the resting blob.
         gsap.fromTo(
-          icon,
-          { opacity: 0, scale: 0.6, y: 20 },
+          desktop.querySelectorAll<HTMLElement>("[data-particle-fade]"),
+          { opacity: 0 },
           {
             opacity: 1,
-            scale: 1,
-            y: 0,
             duration: 0.6,
-            ease: "back.out(1.4)",
-            delay: i * 0.2,
+            stagger: 0.1,
+            ease: "power2.out",
             scrollTrigger: {
-              trigger: section,
-              start: "top 60%",
+              trigger: desktop,
+              start: "top 70%",
               toggleActions: "play none none none",
             },
           }
         );
+        progressRef.current = 1;
+        return;
+      }
+
+      // Pinned scrub trigger — single source of truth for scroll progress.
+      ScrollTrigger.create({
+        trigger: desktop,
+        start: "top center",
+        end: "+=150%",
+        pin: true,
+        scrub: 1,
+        onUpdate: (self) => {
+          progressRef.current = self.progress;
+        },
+        onRefresh: () => {
+          const rect = desktop
+            .querySelector<HTMLDivElement>(".story-circles-container")
+            ?.getBoundingClientRect();
+          if (rect) setSwarmTargets(computeSwarmTargets(rect));
+        },
       });
     }, section);
 
     return () => ctx.revert();
+  }, []);
+
+  // rAF loop — drives DOM crossfades from the same progressRef the particle
+  // shader reads. Writing CSS custom properties on the desktop root avoids React
+  // re-renders during scroll. Pauses cleanly when the tab is hidden.
+  useEffect(() => {
+    const desktop = desktopLayoutRef.current;
+    if (!desktop) return;
+    let rafId = 0;
+    let stopped = false;
+
+    const tick = () => {
+      if (stopped) return;
+      if (!document.hidden) {
+        const p = progressRef.current;
+        // Logo PNG fades in as the particle silhouette locks (≈25→35%).
+        desktop.style.setProperty("--logo-opacity", String(ramp(p, 0.25, 0.35, 0, 1)));
+        // Each icon fades in at its cluster's arrival window.
+        desktop.style.setProperty("--icon-problem-opacity", String(ramp(p, 0.45, 0.55, 0, 1)));
+        desktop.style.setProperty("--icon-mission-opacity", String(ramp(p, 0.50, 0.60, 0, 1)));
+        desktop.style.setProperty("--icon-insight-opacity", String(ramp(p, 0.55, 0.65, 0, 1)));
+        // Tooltips become available only once the section reaches the hold beat.
+        desktop.style.setProperty("--tooltip-pointer", p > 0.65 ? "auto" : "none");
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (
@@ -131,9 +251,9 @@ export default function CogniateStory() {
       </div>
 
       {/* === DESKTOP LAYOUT — wider container to match Figma proportions === */}
-      <div className="hidden lg:block relative mt-32 xl:mt-40 px-4">
+      <div ref={desktopLayoutRef} className="hidden lg:block relative mt-32 xl:mt-40 px-4">
         <div
-          className="relative mx-auto"
+          className="story-circles-container relative mx-auto"
           style={{ maxWidth: 1700, aspectRatio: "1718 / 635" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -144,10 +264,30 @@ export default function CogniateStory() {
             draggable={false}
           />
 
+          {/* Particle swarm — covers the whole container; pointer-events:none so
+              icons remain clickable. Mounted only after swarmTargets resolves on
+              the first ScrollTrigger.refresh, which guarantees the rect is sized. */}
+          {swarmTargets && (
+            <ParticleSwarm
+              scrollProgress={progressRef}
+              logoSrc="/assets/story-cogniate-logo.png"
+              iconTargets={swarmTargets.iconTargets}
+              blobCenter={swarmTargets.blobCenter}
+              className="pointer-events-none absolute inset-0"
+            />
+          )}
+
           {/* Cogniate Logo — centered on circles */}
           <div
+            data-particle-fade
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: "50.4%", top: "50%", width: 130, height: 122 }}
+            style={{
+              left: "50.4%",
+              top: "50%",
+              width: 130,
+              height: 122,
+              opacity: "var(--logo-opacity, 0)",
+            }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -160,9 +300,14 @@ export default function CogniateStory() {
 
           {/* Warning Icon — left intersection of horiz line × outer arc (9 o'clock) */}
           <div
-            ref={(el) => { iconRefs.current[0] = el; }}
+            data-particle-fade
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: "32.0157%", top: "49.9562%" }}
+            style={{
+              left: "32.0157%",
+              top: "49.9562%",
+              opacity: "var(--icon-problem-opacity, 0)",
+              pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
+            }}
           >
             <StoryIcon
               src="/assets/story-warning-icon.svg"
@@ -192,9 +337,14 @@ export default function CogniateStory() {
 
           {/* Flag Icon — top of outer arc (12 o'clock) */}
           <div
-            ref={(el) => { iconRefs.current[1] = el; }}
+            data-particle-fade
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: "50.4449%", top: "0.0957%" }}
+            style={{
+              left: "50.4449%",
+              top: "0.0957%",
+              opacity: "var(--icon-mission-opacity, 0)",
+              pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
+            }}
           >
             <StoryIcon
               src="/assets/story-flag-icon.svg"
@@ -224,9 +374,14 @@ export default function CogniateStory() {
 
           {/* Lightbulb Icon — right intersection of horiz line × outer arc (3 o'clock) */}
           <div
-            ref={(el) => { iconRefs.current[2] = el; }}
+            data-particle-fade
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: "68.8741%", top: "49.9562%" }}
+            style={{
+              left: "68.8741%",
+              top: "49.9562%",
+              opacity: "var(--icon-insight-opacity, 0)",
+              pointerEvents: "var(--tooltip-pointer, none)" as React.CSSProperties["pointerEvents"],
+            }}
           >
             <StoryIcon
               src="/assets/story-lightbulb-icon.svg"
@@ -259,10 +414,9 @@ export default function CogniateStory() {
       {/* === MOBILE LAYOUT === */}
       <div className="relative mx-auto max-w-[1330px] px-5 md:px-6">
         <div className="lg:hidden mt-12 flex flex-col items-center gap-6">
-          {stories.map((story, i) => (
+          {stories.map((story) => (
             <div
               key={story.id}
-              ref={(el) => { if (i === 0) iconRefs.current[0] = el; }}
               className="flex flex-col items-center w-full"
             >
               <StoryIcon

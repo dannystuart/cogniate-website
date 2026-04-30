@@ -498,20 +498,18 @@ function Particles({
     };
   }, [material]);
 
-  // Push progress + time into the shader uniforms every frame.
-  // Object.assign is used here (rather than a direct property write) only to
-  // satisfy react-hooks/immutability — `material` originates from useState()
-  // and the lint rule flags any direct member-write on values it tracks.
-  // Per-frame allocation is two tiny object literals — well inside budget.
-  // `delta` from useFrame gives a real per-frame seconds value (vs. assuming 60fps),
-  // so the firefly drift speed stays steady on slower devices.
+  // Push progress + time into the shader uniforms every frame. `delta` from
+  // useFrame gives real seconds so drift speed stays consistent regardless of
+  // frame rate. Object.assign (vs direct .value=) keeps react-hooks/immutability
+  // happy — `material` is from useState. Presence-checks tolerate a stale state
+  // material surviving HMR with a different uniforms shape (a real dev hazard).
   useFrame((_, delta) => {
     if (typeof document !== "undefined" && document.hidden) return;
+    const u = material.uniforms;
+    if (!u.uProgress || !u.uTime) return;
     const p = typeof progress === "number" ? progress : progress.current;
-    Object.assign(material.uniforms.uProgress, { value: p });
-    Object.assign(material.uniforms.uTime, {
-      value: material.uniforms.uTime.value + delta,
-    });
+    Object.assign(u.uProgress, { value: p });
+    Object.assign(u.uTime, { value: u.uTime.value + delta });
   });
 
   if (!geometry) return null;
