@@ -6,6 +6,15 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Linear ramp from `(fromIn → fromOut)` of progress to `(toIn → toOut)` of value,
+// clamped at the ends. Drives every text reveal CSS variable.
+function ramp(p: number, fromIn: number, fromOut: number, toIn: number, toOut: number): number {
+  if (p <= fromIn) return toIn;
+  if (p >= fromOut) return toOut;
+  const t = (p - fromIn) / (fromOut - fromIn);
+  return toIn + (toOut - toIn) * t;
+}
+
 // Single source of truth for everything tunable.
 // To slow the scrub: bump PIN_DISTANCE.
 // To delay text reveals: push the WORD_*/LYRA/TAGLINE ranges higher.
@@ -72,6 +81,20 @@ export default function CogniateLyraReveal() {
             lastVideoTimeWrite = now;
           }
         }
+
+        // Text reveals — opacity, vertical translation, and a subtle blur
+        // that sharpens as the word arrives. Each element shares the same
+        // shape so a single helper drives all five.
+        const setReveal = (name: string, range: readonly [number, number]) => {
+          wrapper.style.setProperty(`--${name}-opacity`, String(ramp(p, range[0], range[1], 0, 1)));
+          wrapper.style.setProperty(`--${name}-y`, `${ramp(p, range[0], range[1], 16, 0)}px`);
+          wrapper.style.setProperty(`--${name}-blur`, `${ramp(p, range[0], range[1], 2, 0)}px`);
+        };
+        setReveal("lyra", TIMING.LYRA);
+        setReveal("tagline", TIMING.TAGLINE);
+        setReveal("w-create", TIMING.WORD_CREATE);
+        setReveal("w-design", TIMING.WORD_DESIGN);
+        setReveal("w-publish", TIMING.WORD_PUBLISH);
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -134,6 +157,9 @@ export default function CogniateLyraReveal() {
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",
+              opacity: "var(--lyra-opacity, 0)",
+              transform: "translateY(var(--lyra-y, 16px))",
+              filter: "blur(var(--lyra-blur, 2px))",
             }}
           >
             Lyra
@@ -155,6 +181,9 @@ export default function CogniateLyraReveal() {
               letterSpacing: "-0.01em",
               color: "rgba(242,234,255,0.8)",
               maxWidth: "min(420px, 90vw)",
+              opacity: "var(--tagline-opacity, 0)",
+              transform: "translateY(var(--tagline-y, 16px))",
+              filter: "blur(var(--tagline-blur, 2px))",
             }}
           >
             Your AI assistant to help you from idea to fully created course.
@@ -176,13 +205,37 @@ export default function CogniateLyraReveal() {
               color: "transparent",
             }}
           >
-            <span data-word="create" style={{ display: "inline-block" }}>
+            <span
+              data-word="create"
+              style={{
+                display: "inline-block",
+                opacity: "var(--w-create-opacity, 0)",
+                transform: "translateY(var(--w-create-y, 16px))",
+                filter: "blur(var(--w-create-blur, 2px))",
+              }}
+            >
               Create.&nbsp;
             </span>
-            <span data-word="design" style={{ display: "inline-block" }}>
+            <span
+              data-word="design"
+              style={{
+                display: "inline-block",
+                opacity: "var(--w-design-opacity, 0)",
+                transform: "translateY(var(--w-design-y, 16px))",
+                filter: "blur(var(--w-design-blur, 2px))",
+              }}
+            >
               Design.&nbsp;
             </span>
-            <span data-word="publish" style={{ display: "inline-block" }}>
+            <span
+              data-word="publish"
+              style={{
+                display: "inline-block",
+                opacity: "var(--w-publish-opacity, 0)",
+                transform: "translateY(var(--w-publish-y, 16px))",
+                filter: "blur(var(--w-publish-blur, 2px))",
+              }}
+            >
               Publish
             </span>
           </h3>
