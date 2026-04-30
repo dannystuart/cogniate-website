@@ -313,6 +313,22 @@ function buildParticleGeometry(
     aDriftJitter[i] = 0.55 + Math.random();
   }
 
+  // Per-particle Z depth — gives the swarm volume rather than a flat sheet.
+  // Normal distribution biased toward the focal plane (z=0) with a long tail
+  // out to ~±500. The shader uses this to drive size, brightness, and colour
+  // temperature for atmospheric perspective. XY targeting is unchanged so the
+  // silhouette stays sharp — Z just adds depth read on top.
+  const aZ = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    aZ[i] = randNormal() * 220;
+  }
+
+  // Per-particle twinkle phase so brightness flicker isn't synchronised.
+  const aTwinkle = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    aTwinkle[i] = Math.random() * Math.PI * 2;
+  }
+
   geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geo.setAttribute("aLogoTarget", new THREE.BufferAttribute(aLogoTarget, 3));
   geo.setAttribute("aIconTarget", new THREE.BufferAttribute(aIconTarget, 3));
@@ -324,6 +340,8 @@ function buildParticleGeometry(
   geo.setAttribute("aTint", new THREE.BufferAttribute(aTint, 3));
   geo.setAttribute("aSizeJitter", new THREE.BufferAttribute(aSizeJitter, 1));
   geo.setAttribute("aDriftJitter", new THREE.BufferAttribute(aDriftJitter, 1));
+  geo.setAttribute("aZ", new THREE.BufferAttribute(aZ, 1));
+  geo.setAttribute("aTwinkle", new THREE.BufferAttribute(aTwinkle, 1));
   return geo;
 }
 
@@ -348,6 +366,8 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
       attribute float aDelay;
       attribute float aSizeJitter;
       attribute float aDriftJitter;
+      attribute float aZ;
+      attribute float aTwinkle;
       uniform float uProgress;
       uniform float uTime;
       uniform float uPixelRatio;
@@ -355,6 +375,23 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
       varying vec3 vBaseTint;
       varying vec3 vClusterTint;
       varying float vClusterMix;
+      varying float vDepth;
+      varying float vTwinkle;
+
+      // Cheap divergence-low 3D flow field. Sampling at the particle's current
+      // position gives a fluid, position-dependent drift — the "alive" feel —
+      // rather than every particle oscillating in lockstep. Output is bounded
+      // to roughly [-1, 1] per axis after the 0.5 scale. Time coefficients
+      // tuned so the field evolves fast enough to read as continuous motion
+      // (was ~0.4, kept too still at the resting holds).
+      vec3 flow(vec3 p, float t) {
+        float k = 0.006;
+        return vec3(
+          sin(p.y * k + t * 0.70) - cos(p.z * k + t * 0.55),
+          sin(p.z * k + t * 0.85) - cos(p.x * k + t * 0.65),
+          sin(p.x * k + t * 0.60) - cos(p.y * k + t * 0.75)
+        ) * 0.5;
+      }
 
       // Choreography phase windows (constants kept here for readability):
       //   Phase 1 (scatter→logo):   0.00 → 0.25 (per-particle delay shifts start)
@@ -399,25 +436,26 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
         // Final position: pos12 through phase 1–3, pos4 from 0.75 onwards.
         vec3 pos = mix(pos12, pos4, step(0.75, p));
 
-        // Drift envelope — base curve goes 9 → 0.4 by p≈0.30 (Phase 1 fireflies
-        // settling), then humps lift it during peel-off and shift-down. At the
-        // blob we settle to ~3.5 (was 2.4) so the cloud reads alive rather than
-        // locked. Each particle's amplitude is multiplied by aDriftJitter so
-        // some hover gently and others wander more — organic, not synchronised.
-        float driftBase = mix(9.0, 0.4, smoothstep(0.0, 0.30, p));
+        // Drift envelope — base curve goes 9 → 3.0 by p≈0.30 (Phase 1 fireflies
+        // settling). The resting floor (was 0.4) is kept high enough that the
+        // silhouette and icon-halo holds still read as moving rather than
+        // pinned, while the humps lift it further during peel-off and the blob.
+        // Each particle's amplitude is multiplied by aDriftJitter so some hover
+        // gently and others wander more — organic, not synchronised.
+        float driftBase = mix(9.0, 3.0, smoothstep(0.0, 0.30, p));
         float hump2 = smoothstep(0.30, 0.45, p) * (1.0 - smoothstep(0.50, 0.65, p));
         float hump4 = smoothstep(0.75, 0.90, p);
         float driftMag = (driftBase + 5.5 * hump2 + 5.0 * hump4) * aDriftJitter;
-        float driftPhase = aDelay * 6.2831853;
-        // Two octaves: a fast carrier and a slower wander, summed for a more
-        // organic firefly feel than a single sine wave.
-        vec2 drift = vec2(
-          sin(uTime * 1.4 + driftPhase) * 0.7
-            + sin(uTime * 0.6 + driftPhase * 2.1) * 0.5,
-          cos(uTime * 1.2 + driftPhase * 1.3) * 0.7
-            + cos(uTime * 0.5 + driftPhase * 1.7) * 0.5
-        );
-        pos.xy += drift * driftMag;
+
+        // 3D flow field — replaces the old XY sine drift. Sampling the field
+        // at the particle's current position means neighbours move coherently
+        // (currents, eddies) rather than in-place wobble, which is the single
+        // biggest contributor to the "living entity" read. Z gets a smaller
+        // share so the depth read (which is keyed off aZ, not pos.z) stays
+        // stable while still letting particles breathe in/out.
+        vec3 d = flow(pos + vec3(0.0, 0.0, aZ), uTime);
+        pos.xy += d.xy * driftMag;
+        pos.z = aZ + d.z * driftMag * 0.35;
 
         // Translate the entire scene from canvas centre to (e.g.) the SVG
         // container's centre on screen. Production passes a non-zero offset so
@@ -434,29 +472,64 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
         gl_Position = projectionMatrix * mv;
 
+        // Depth read — drives size in the vertex shader and colour/intensity
+        // in the fragment shader. Normalised 0 (far) → 1 (near) for the ±400
+        // sigma range; clamped because randNormal can sample outside that.
+        vDepth = clamp((aZ + 400.0) / 800.0, 0.0, 1.0);
+        vTwinkle = aTwinkle;
+
         // Size envelope: 9 → 3.5 by p≈0.30 (Phase 1), flat through phases 2–3,
         // boost in the blob so the final cloud has volume. Per-particle
         // aSizeJitter (0.55..1.55) gives ~3× ratio between smallest and largest
         // sprites — the depth the user asked for ("variety in particle size").
+        // Depth multiplier (0.55..1.45) layers on top so near particles
+        // genuinely look bigger than far ones — atmospheric perspective.
         float sizeBase = mix(9.0, 3.5, smoothstep(0.0, 0.30, p));
         float sizeBlobBoost = smoothstep(0.85, 1.00, p) * 1.5;
-        float sizePx = (sizeBase + sizeBlobBoost) * aSizeJitter;
+        float depthSize = mix(0.55, 1.45, vDepth);
+        float sizePx = (sizeBase + sizeBlobBoost) * aSizeJitter * depthSize;
         gl_PointSize = sizePx * uPixelRatio;
       }
     `,
     fragmentShader: /* glsl */ `
       // Soft radial sprite, additive-blended. Base tint always present;
       // cluster tint blends in via the vClusterMix envelope during peel-off.
+      // Depth (vDepth, 0=far → 1=near) drives atmospheric perspective:
+      // far particles read cool/dim, near particles warm/bright. A subtle
+      // per-particle twinkle keeps the swarm from feeling locked.
       varying vec3 vBaseTint;
       varying vec3 vClusterTint;
       varying float vClusterMix;
+      varying float vDepth;
+      varying float vTwinkle;
+      uniform float uTime;
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float r = length(uv);
-        float halo = smoothstep(0.5, 0.0, r);
-        float core = smoothstep(0.18, 0.0, r);
+        // Far particles get a softer, more diffuse halo (out-of-focus read);
+        // near particles get a tighter core. Both come from the same r, just
+        // remapping the smoothstep edges with depth.
+        float haloEdge = mix(0.55, 0.45, vDepth);
+        float coreEdge = mix(0.22, 0.14, vDepth);
+        float halo = smoothstep(haloEdge, 0.0, r);
+        float core = smoothstep(coreEdge, 0.0, r);
         float intensity = halo * 0.25 + core * 1.0;
+
         vec3 col = mix(vBaseTint, vClusterTint, vClusterMix);
+        // Atmospheric tint: cool blue at depth, neutral-warm in front.
+        vec3 farTint  = vec3(0.62, 0.74, 1.00);
+        vec3 nearTint = vec3(1.00, 0.96, 0.90);
+        col *= mix(farTint, nearTint, vDepth);
+
+        // Depth intensity: far = dim (atmospheric extinction), near = punchy.
+        // Range chosen so the median (vDepth≈0.5) lands ~1.0 — silhouette
+        // brightness matches the pre-depth baseline; the spread does the
+        // perspective work.
+        float depthIntensity = mix(0.70, 1.30, vDepth);
+        // Slow per-particle twinkle so individual stars breathe.
+        float twinkle = 1.0 + sin(uTime * 1.3 + vTwinkle) * 0.18;
+        intensity *= depthIntensity * twinkle;
+
         gl_FragColor = vec4(col * intensity, intensity);
       }
     `,
