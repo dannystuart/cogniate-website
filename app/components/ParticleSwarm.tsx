@@ -156,12 +156,30 @@ function buildParticleGeometry(silhouette: Float32Array): THREE.BufferGeometry {
   // multiply on top of this.
   const aBaseTint = new Float32Array(count * 3);
   const variants: ReadonlyArray<readonly [number, number, number]> = [
-    [1.0, 1.0, 1.0], // pure white
-    [0.95, 0.97, 1.0], // cool white
-    [1.0, 0.97, 0.92], // warm white
-    [0.92, 0.96, 1.0], // pale blue
-    [1.0, 0.94, 0.96], // pale rose
-    [0.94, 1.0, 0.97], // pale mint
+    // White majority (12 of 20 = 60%) — keeps overall feel luminous-white.
+    [1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0],
+    [0.97, 0.98, 1.0], // cool white
+    [0.97, 0.98, 1.0],
+    [1.0, 0.98, 0.95], // warm white
+    [1.0, 0.98, 0.95],
+    [0.96, 0.97, 1.0], // very faint cool
+    [1.0, 0.97, 0.96], // very faint warm
+    // Lavender accents (5 of 20 = 25%) — the "purples etc" the user called out.
+    [0.88, 0.82, 0.97], // soft lavender
+    [0.88, 0.82, 0.97],
+    [0.85, 0.78, 0.96], // slightly deeper lavender
+    [0.92, 0.86, 0.99], // pale lavender
+    [0.92, 0.86, 0.99],
+    // Salmon (2 of 20 = 10%)
+    [0.96, 0.84, 0.86], // soft salmon
+    [0.96, 0.84, 0.86],
+    // Mint (1 of 20 = 5%)
+    [0.85, 0.94, 0.88], // soft mint
   ];
   for (let i = 0; i < count; i++) {
     const v = variants[Math.floor(Math.random() * variants.length)];
@@ -185,7 +203,6 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
       uProgress: { value: 0 },
       uTime: { value: 0 },
       uPixelRatio: { value: typeof window !== "undefined" ? window.devicePixelRatio : 1 },
-      uSize: { value: 6.0 }, // base particle size in CSS px
     },
     vertexShader: /* glsl */ `
       attribute vec3 aLogoTarget;
@@ -194,7 +211,6 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
       uniform float uProgress;
       uniform float uTime;
       uniform float uPixelRatio;
-      uniform float uSize;
       varying vec3 vBaseTint;
 
       // Per-particle scattered → logo. Each particle has its own start window.
@@ -207,19 +223,23 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
         t = smoothstep(0.0, 1.0, t);
         vec3 pos = mix(position, aLogoTarget, t);
 
-        // Always-on firefly drift — small amplitude, per-particle phase via
-        // aDelay so they don't drift in sync. Phase 2 may envelope this against
-        // formation state; for now it stays on through every progress value.
+        // Drift envelope: strong when scattered, smoothly fades to ~0 by p≈0.30.
+        // Jitter at the logo would blur the silhouette under additive blending,
+        // so the formation must end up still.
+        float driftMag = mix(9.0, 0.4, smoothstep(0.0, 0.30, uProgress));
         float driftPhase = aDelay * 6.2831853;
         vec2 drift = vec2(
-          sin(uTime * 0.6 + driftPhase),
-          cos(uTime * 0.5 + driftPhase * 1.3)
+          sin(uTime * 1.4 + driftPhase),
+          cos(uTime * 1.2 + driftPhase * 1.3)
         );
-        pos.xy += drift * 3.5;
+        pos.xy += drift * driftMag;
 
         vec4 mv = modelViewMatrix * vec4(pos, 1.0);
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = uSize * uPixelRatio;
+        // Large diffuse particles when scattered → small crisp particles at logo.
+        // Same envelope as the drift magnitude so size and motion settle together.
+        float sizePx = mix(9.0, 3.5, smoothstep(0.0, 0.30, uProgress));
+        gl_PointSize = sizePx * uPixelRatio;
       }
     `,
     fragmentShader: /* glsl */ `
@@ -228,9 +248,9 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float r = length(uv);
-        float a = smoothstep(0.5, 0.0, r);   // soft outer falloff
-        float core = smoothstep(0.25, 0.0, r); // bright inner core
-        float intensity = a * 0.4 + core * 1.0;
+        float halo = smoothstep(0.5, 0.0, r);   // outer falloff
+        float core = smoothstep(0.18, 0.0, r);  // tighter core (was 0.25)
+        float intensity = halo * 0.25 + core * 1.0;  // less halo (was 0.4)
         gl_FragColor = vec4(vBaseTint * intensity, intensity);
       }
     `,
