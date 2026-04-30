@@ -79,11 +79,19 @@ function setupNonPinnedReveal(
 // To delay text reveals: push the WORD_*/LYRA/TAGLINE ranges higher.
 const TIMING = {
   PIN_DISTANCE: "+=250%",
-  VIDEO_END: 0.8,
-  LYRA: [0.75, 0.83] as const,
-  TAGLINE: [0.78, 0.86] as const,
-  WORD_CREATE: [0.86, 0.9] as const,
-  WORD_DESIGN: [0.91, 0.95] as const,
+  // Video opacity envelope — fades up at the start (crossfade from Story's
+  // tableau), holds at 1 through the scrub, then dims to 0.3 so the typeset
+  // wordmark reads cleanly over it.
+  VIDEO_FADE_IN: [0.0, 0.05] as const,
+  VIDEO_DIM: [0.8, 0.88] as const, // 1 → 0.3
+  // Scrub window — currentTime maps from progress 0.05 → 0.78 onto 0 → duration.
+  VIDEO_SCRUB_START: 0.05,
+  VIDEO_SCRUB_END: 0.78,
+  // Text reveals.
+  LYRA: [0.72, 0.8] as const,
+  TAGLINE: [0.82, 0.88] as const,
+  WORD_CREATE: [0.88, 0.92] as const,
+  WORD_DESIGN: [0.92, 0.96] as const,
   WORD_PUBLISH: [0.96, 1.0] as const,
 } as const;
 
@@ -114,7 +122,12 @@ export default function CogniateLyraReveal() {
           const video = videoRef.current;
           if (video) {
             const seekToForcedFrame = () => {
-              const t = Math.min(v / TIMING.VIDEO_END, 1) * video.duration;
+              // Match the rAF loop's scrub: progress 0.05 → 0.78 maps onto 0 → duration.
+              // Below 0.05 the video is mid-fade-in (currentTime stays at 0); above 0.78
+              // it parks on the last frame.
+              const span = TIMING.VIDEO_SCRUB_END - TIMING.VIDEO_SCRUB_START;
+              const tNorm = Math.min(Math.max((v - TIMING.VIDEO_SCRUB_START) / span, 0), 1);
+              const t = tNorm * video.duration;
               if (Number.isFinite(t)) video.currentTime = t;
             };
             if (Number.isFinite(video.duration) && video.duration > 0) {
@@ -185,7 +198,11 @@ export default function CogniateLyraReveal() {
         // iOS Safari restarts a decode pipeline on every currentTime write;
         // 60 Hz can stall it. 30 Hz is plenty since source is 30 fps.
         if (video.duration && now - lastVideoTimeWrite > 33) {
-          const videoT = Math.min(p / TIMING.VIDEO_END, 1) * video.duration;
+          // Map progress [VIDEO_SCRUB_START, VIDEO_SCRUB_END] → [0, duration].
+          // Outside that window currentTime parks at 0 or duration respectively.
+          const span = TIMING.VIDEO_SCRUB_END - TIMING.VIDEO_SCRUB_START;
+          const tNorm = Math.min(Math.max((p - TIMING.VIDEO_SCRUB_START) / span, 0), 1);
+          const videoT = tNorm * video.duration;
           if (Number.isFinite(videoT)) {
             video.currentTime = videoT;
             lastVideoTimeWrite = now;
