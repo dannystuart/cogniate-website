@@ -24,7 +24,10 @@ const PERCENT_ANCHORS = {
   problem: { left: 32.0157, top: 49.9562 },
   mission: { left: 50.4449, top: 0.0957 },
   insight: { left: 68.8741, top: 49.9562 },
-  blob: { left: 50.4, top: 76.0 },
+  // Final blob sits at the very bottom of the concentric-circles SVG — past
+  // the inner circle, near the outer circle's lower edge. The hand-off point
+  // for a future video reveal that drops in from below.
+  blob: { left: 50.4, top: 96.0 },
 } as const;
 
 const CLUSTER_TINTS: Record<"problem" | "mission" | "insight", [number, number, number]> = {
@@ -118,23 +121,26 @@ const stories = [
 export default function CogniateStory() {
   const [activeStory, setActiveStory] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
   const desktopLayoutRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
+  // Pixel offset from the desktop wrapper's centre (= Canvas centre) to the
+  // SVG container's centre on screen. Updated on ScrollTrigger refresh so the
+  // particle silhouette lands over the DOM logo PNG. Scene Y is up so this
+  // flips the sign on the Y component relative to the DOMRect coords.
+  const originOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [swarmTargets, setSwarmTargets] = useState<ReturnType<
     typeof computeSwarmTargets
   > | null>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
-    const heading = headingRef.current;
     const desktop = desktopLayoutRef.current;
-    if (!section || !heading) return;
+    if (!section) return;
 
     const ctx = gsap.context(() => {
-      // Heading fade — unchanged from the original.
+      // Heading fade — applies to both desktop and mobile copies via class.
       gsap.fromTo(
-        heading,
+        ".story-heading",
         { opacity: 0, y: 30 },
         {
           opacity: 1,
@@ -162,10 +168,16 @@ export default function CogniateStory() {
         if (forced !== null) {
           const v = Math.max(0, Math.min(1, parseFloat(forced)));
           progressRef.current = v;
-          const rect = desktop
-            .querySelector<HTMLDivElement>(".story-circles-container")
-            ?.getBoundingClientRect();
-          if (rect) setSwarmTargets(computeSwarmTargets(rect));
+          const circles = desktop.querySelector<HTMLDivElement>(".story-circles-container");
+          if (circles) {
+            const svgRect = circles.getBoundingClientRect();
+            const wrapperRect = desktop.getBoundingClientRect();
+            originOffsetRef.current = {
+              x: svgRect.left + svgRect.width / 2 - (wrapperRect.left + wrapperRect.width / 2),
+              y: wrapperRect.top + wrapperRect.height / 2 - (svgRect.top + svgRect.height / 2),
+            };
+            setSwarmTargets(computeSwarmTargets(svgRect));
+          }
           return; // skip both the reduced-motion branch and the pinned trigger
         }
       }
@@ -196,9 +208,12 @@ export default function CogniateStory() {
       }
 
       // Pinned scrub trigger — single source of truth for scroll progress.
+      // The desktop wrapper is min-h-screen so "top top" pins it filling the
+      // viewport; +=150% gives a comfortable scroll length to resolve the full
+      // choreography (~2–4s of real-time scrolling).
       ScrollTrigger.create({
         trigger: desktop,
-        start: "top center",
+        start: "top top",
         end: "+=150%",
         pin: true,
         scrub: 1,
@@ -206,10 +221,26 @@ export default function CogniateStory() {
           progressRef.current = self.progress;
         },
         onRefresh: () => {
-          const rect = desktop
-            .querySelector<HTMLDivElement>(".story-circles-container")
-            ?.getBoundingClientRect();
-          if (rect) setSwarmTargets(computeSwarmTargets(rect));
+          const circles = desktop.querySelector<HTMLDivElement>(
+            ".story-circles-container"
+          );
+          if (!circles) return;
+          const svgRect = circles.getBoundingClientRect();
+          const wrapperRect = desktop.getBoundingClientRect();
+          // Origin offset: pixel translation in scene-space (Y up) from the
+          // wrapper's centre (Canvas centre) to the SVG container's centre.
+          // Lets us mount the Canvas as a viewport-filling sibling of heading
+          // and circles while the formed silhouette still lands over the DOM
+          // logo PNG inside the SVG container.
+          const svgCx = svgRect.left + svgRect.width / 2;
+          const svgCy = svgRect.top + svgRect.height / 2;
+          const wrapperCx = wrapperRect.left + wrapperRect.width / 2;
+          const wrapperCy = wrapperRect.top + wrapperRect.height / 2;
+          originOffsetRef.current = {
+            x: svgCx - wrapperCx,
+            y: wrapperCy - svgCy, // scene Y up; DOM Y down
+          };
+          setSwarmTargets(computeSwarmTargets(svgRect));
         },
       });
     }, section);
@@ -252,46 +283,58 @@ export default function CogniateStory() {
     <section
       ref={sectionRef}
       data-testid="cogniate-story-section"
-      className="relative w-full bg-bg-secondary overflow-x-hidden py-20 lg:pt-32 lg:pb-52"
+      className="relative w-full bg-bg-secondary overflow-x-hidden py-20 lg:py-0"
     >
-      {/* Heading — in content container */}
-      <div className="relative mx-auto max-w-[1330px] px-5 md:px-6">
-        <h2
-          ref={headingRef}
-          className="landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]"
-        >
-          Learning is a journey.
-          <br />
-          The Cogniate story.
-        </h2>
-      </div>
-
-      {/* === DESKTOP LAYOUT — wider container to match Figma proportions === */}
-      <div ref={desktopLayoutRef} className="hidden lg:block relative mt-32 xl:mt-40 px-4">
-        <div
-          className="story-circles-container relative mx-auto"
-          style={{ maxWidth: 1700, aspectRatio: "1718 / 635" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/story-concentric-circles.svg"
-            alt=""
-            className="absolute inset-0 size-full"
-            draggable={false}
+      {/* === DESKTOP LAYOUT — viewport-filling wrapper that gets pinned ===
+          Heading + circles live inside this wrapper so they both stay visible
+          during the pinned scroll. The Canvas mounts as a sibling that covers
+          the entire wrapper, giving particles the full viewport to scatter
+          across rather than just the SVG container's narrow aspect-ratio box. */}
+      <div
+        ref={desktopLayoutRef}
+        className="relative hidden min-h-screen flex-col items-center justify-center lg:flex"
+      >
+        {/* Particle swarm — covers the whole wrapper; pointer-events:none so
+            icons remain clickable. Mounted only after swarmTargets resolves on
+            the first ScrollTrigger.refresh, which guarantees the rect is sized.
+            originOffsetRef translates the scene from wrapper-centre to the SVG
+            container's centre on screen so the formed silhouette aligns with
+            the DOM logo PNG. */}
+        {swarmTargets && (
+          <ParticleSwarm
+            scrollProgress={progressRef}
+            logoSrc="/assets/story-cogniate-logo.png"
+            iconTargets={swarmTargets.iconTargets}
+            blobCenter={swarmTargets.blobCenter}
+            originOffsetRef={originOffsetRef}
+            className="pointer-events-none absolute inset-0"
           />
+        )}
 
-          {/* Particle swarm — covers the whole container; pointer-events:none so
-              icons remain clickable. Mounted only after swarmTargets resolves on
-              the first ScrollTrigger.refresh, which guarantees the rect is sized. */}
-          {swarmTargets && (
-            <ParticleSwarm
-              scrollProgress={progressRef}
-              logoSrc="/assets/story-cogniate-logo.png"
-              iconTargets={swarmTargets.iconTargets}
-              blobCenter={swarmTargets.blobCenter}
-              className="pointer-events-none absolute inset-0"
+        {/* Heading — relative so it stacks above the absolutely-positioned
+            particles via DOM order (no z-index needed). */}
+        <div className="relative w-full max-w-[1330px] px-5 md:px-6">
+          <h2 className="story-heading landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]">
+            Learning is a journey.
+            <br />
+            The Cogniate story.
+          </h2>
+        </div>
+
+        {/* Circles container — same size and aspect ratio as before, just
+            nested one level deeper inside the new flex wrapper. */}
+        <div className="relative mt-12 w-full px-4 xl:mt-16">
+          <div
+            className="story-circles-container relative mx-auto"
+            style={{ maxWidth: 1700, aspectRatio: "1718 / 635" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/story-concentric-circles.svg"
+              alt=""
+              className="absolute inset-0 size-full"
+              draggable={false}
             />
-          )}
 
           {/* Cogniate Logo — centered on circles */}
           <div
@@ -424,12 +467,21 @@ export default function CogniateStory() {
               />
             </div>
           </div>
+          </div>
+          {/* end story-circles-container */}
         </div>
+        {/* end circles wrapper */}
       </div>
+      {/* end desktop wrapper */}
 
-      {/* === MOBILE LAYOUT === */}
-      <div className="relative mx-auto max-w-[1330px] px-5 md:px-6">
-        <div className="lg:hidden mt-12 flex flex-col items-center gap-6">
+      {/* === MOBILE LAYOUT — duplicate heading + accordion === */}
+      <div className="relative mx-auto max-w-[1330px] px-5 md:px-6 lg:hidden">
+        <h2 className="story-heading landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]">
+          Learning is a journey.
+          <br />
+          The Cogniate story.
+        </h2>
+        <div className="mt-12 flex flex-col items-center gap-6">
           {stories.map((story) => (
             <div
               key={story.id}

@@ -19,6 +19,10 @@ export interface ParticleSwarmProps {
   /** Phase 2 inputs. When omitted (e.g. from /particle-test), defaults are used. */
   iconTargets?: readonly IconTarget[];
   blobCenter?: { x: number; y: number };
+  /** Pixel offset applied to every particle position in the shader, to move the
+   *  whole scene from the canvas centre to (e.g.) the SVG container's centre when
+   *  the Canvas is a viewport-filling wrapper rather than the SVG itself. */
+  originOffsetRef?: MutableRefObject<{ x: number; y: number }>;
   className?: string;
 }
 
@@ -87,6 +91,7 @@ export default function ParticleSwarm({
   logoSrc,
   iconTargets,
   blobCenter,
+  originOffsetRef,
   className,
 }: ParticleSwarmProps) {
   return (
@@ -103,6 +108,7 @@ export default function ParticleSwarm({
           logoSrc={logoSrc}
           iconTargets={iconTargets ?? DEFAULT_ICON_TARGETS}
           blobCenter={blobCenter ?? DEFAULT_BLOB_CENTER}
+          originOffsetRef={originOffsetRef}
         />
       </Canvas>
     </div>
@@ -225,10 +231,12 @@ function buildParticleGeometry(
     aBaseTint[i * 3 + 2] = v[2];
   }
 
-  // Pool assignment: 1800 problem / 1800 mission / 1800 insight / 600 ambient,
-  // shuffled so cluster particles aren't spatially correlated in the silhouette.
-  // The ambient pool stays at the logo through phase 2, then drifts to the blob.
-  const POOL_SIZES = [1800, 1800, 1800, 600] as const;
+  // Pool assignment: 1200/1200/1200 cluster + 2400 ambient. Ambient share is
+  // intentionally large because Phase 4 forms the final blob from the AMBIENT
+  // pool only — cluster particles freeze at their icon halos in phase 4 instead
+  // of streaming back to the centre. A skinny ambient pool would read as a
+  // thin remnant cloud; 2400 gives the blob real mass.
+  const POOL_SIZES = [1200, 1200, 1200, 2400] as const;
   const aPool = new Float32Array(count);
   {
     let cursor = 0;
@@ -304,6 +312,18 @@ function buildParticleGeometry(
     aBlobTarget[i * 3 + 1] = blobCenter.y + Math.sin(theta) * rad;
   }
 
+  // Per-particle jitter for size and drift amplitude. Without these, every
+  // particle moves and renders identically (modulo position+delay), which reads
+  // as a uniform sheet of glow. The 0.55..1.55 range gives a ~3× ratio between
+  // smallest and largest sprite, enough that overlapping particles read as
+  // depth (some bright/big, some faint/small) rather than a flat additive wash.
+  const aSizeJitter = new Float32Array(count);
+  const aDriftJitter = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    aSizeJitter[i] = 0.55 + Math.random();
+    aDriftJitter[i] = 0.55 + Math.random();
+  }
+
   geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geo.setAttribute("aLogoTarget", new THREE.BufferAttribute(aLogoTarget, 3));
   geo.setAttribute("aIconTarget", new THREE.BufferAttribute(aIconTarget, 3));
@@ -313,6 +333,8 @@ function buildParticleGeometry(
   geo.setAttribute("aPool", new THREE.BufferAttribute(aPool, 1));
   geo.setAttribute("aBaseTint", new THREE.BufferAttribute(aBaseTint, 3));
   geo.setAttribute("aTint", new THREE.BufferAttribute(aTint, 3));
+  geo.setAttribute("aSizeJitter", new THREE.BufferAttribute(aSizeJitter, 1));
+  geo.setAttribute("aDriftJitter", new THREE.BufferAttribute(aDriftJitter, 1));
   return geo;
 }
 
@@ -324,6 +346,7 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
       uProgress: { value: 0 },
       uTime: { value: 0 },
       uPixelRatio: { value: typeof window !== "undefined" ? window.devicePixelRatio : 1 },
+      uOriginOffset: { value: new THREE.Vector2(0, 0) },
     },
     vertexShader: /* glsl */ `
       attribute vec3 aLogoTarget;
@@ -334,9 +357,12 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
       attribute vec3 aTint;
       attribute float aPool;
       attribute float aDelay;
+      attribute float aSizeJitter;
+      attribute float aDriftJitter;
       uniform float uProgress;
       uniform float uTime;
       uniform float uPixelRatio;
+      uniform vec2 uOriginOffset;
       varying vec3 vBaseTint;
       varying vec3 vClusterTint;
       varying float vClusterMix;
@@ -372,29 +398,43 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
         // Phase 1 dominates until logo locks at p=0.25, then bezier takes over.
         vec3 pos12 = mix(pos1, bez, step(0.25, p));
 
-        // PHASE 4: drift from resting position (icon for cluster pools, logo
-        // for ambient) to blob. step(0.5, t2) tells us which pool we are.
-        vec3 phase4Start = mix(aLogoTarget, aIconTarget, step(0.5, t2));
+        // PHASE 4: ambient pool drifts from logo to blob; cluster pools freeze
+        // at their icon halos so the blob reads as forming from the central
+        // logo swarm rather than collapsing inward from three icons.
+        float ambientMask = step(2.5, aPool);
         float t4 = smoothstep(0.75, 1.00, p);
-        vec3 pos4 = mix(phase4Start, aBlobTarget, t4);
+        vec3 phase4Cluster = aIconTarget;
+        vec3 phase4Ambient = mix(aLogoTarget, aBlobTarget, t4);
+        vec3 pos4 = mix(phase4Cluster, phase4Ambient, ambientMask);
 
         // Final position: pos12 through phase 1–3, pos4 from 0.75 onwards.
         vec3 pos = mix(pos12, pos4, step(0.75, p));
 
         // Drift envelope — base curve goes 9 → 0.4 by p≈0.30 (Phase 1 fireflies
-        // settling), then humps lift it during peel-off (≈5.4 peak around p=0.45)
-        // and shift-down (≈4.4 peak around p=0.90), settling to ~2.4 in the blob
-        // so the cloud reads alive rather than locked.
+        // settling), then humps lift it during peel-off and shift-down. At the
+        // blob we settle to ~3.5 (was 2.4) so the cloud reads alive rather than
+        // locked. Each particle's amplitude is multiplied by aDriftJitter so
+        // some hover gently and others wander more — organic, not synchronised.
         float driftBase = mix(9.0, 0.4, smoothstep(0.0, 0.30, p));
         float hump2 = smoothstep(0.30, 0.45, p) * (1.0 - smoothstep(0.50, 0.65, p));
-        float hump4 = smoothstep(0.75, 0.90, p) * (1.0 - smoothstep(0.95, 1.00, p) * 0.5);
-        float driftMag = driftBase + 5.0 * hump2 + 4.0 * hump4;
+        float hump4 = smoothstep(0.75, 0.90, p);
+        float driftMag = (driftBase + 5.5 * hump2 + 5.0 * hump4) * aDriftJitter;
         float driftPhase = aDelay * 6.2831853;
+        // Two octaves: a fast carrier and a slower wander, summed for a more
+        // organic firefly feel than a single sine wave.
         vec2 drift = vec2(
-          sin(uTime * 1.4 + driftPhase),
-          cos(uTime * 1.2 + driftPhase * 1.3)
+          sin(uTime * 1.4 + driftPhase) * 0.7
+            + sin(uTime * 0.6 + driftPhase * 2.1) * 0.5,
+          cos(uTime * 1.2 + driftPhase * 1.3) * 0.7
+            + cos(uTime * 0.5 + driftPhase * 1.7) * 0.5
         );
         pos.xy += drift * driftMag;
+
+        // Translate the entire scene from canvas centre to (e.g.) the SVG
+        // container's centre on screen. Production passes a non-zero offset so
+        // the formed silhouette sits over the DOM logo PNG rather than at the
+        // wrapper's geometric centre.
+        pos.xy += uOriginOffset;
 
         // Cluster tint envelope: ramps in as the cluster peels off, ramps back
         // out as it arrives at the icon halo. Ambient pool always 0 (white).
@@ -406,10 +446,12 @@ function buildParticleMaterial(): THREE.ShaderMaterial {
         gl_Position = projectionMatrix * mv;
 
         // Size envelope: 9 → 3.5 by p≈0.30 (Phase 1), flat through phases 2–3,
-        // tiny boost in the blob so the final cloud has volume.
+        // boost in the blob so the final cloud has volume. Per-particle
+        // aSizeJitter (0.55..1.55) gives ~3× ratio between smallest and largest
+        // sprites — the depth the user asked for ("variety in particle size").
         float sizeBase = mix(9.0, 3.5, smoothstep(0.0, 0.30, p));
-        float sizeBlobBoost = smoothstep(0.85, 1.00, p) * 0.5;
-        float sizePx = sizeBase + sizeBlobBoost;
+        float sizeBlobBoost = smoothstep(0.85, 1.00, p) * 1.5;
+        float sizePx = (sizeBase + sizeBlobBoost) * aSizeJitter;
         gl_PointSize = sizePx * uPixelRatio;
       }
     `,
@@ -440,11 +482,13 @@ function Particles({
   logoSrc,
   iconTargets,
   blobCenter,
+  originOffsetRef,
 }: {
   progress: number | MutableRefObject<number>;
   logoSrc: string;
   iconTargets: readonly IconTarget[];
   blobCenter: { x: number; y: number };
+  originOffsetRef?: MutableRefObject<{ x: number; y: number }>;
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   // Lazy initialiser so the material is constructed exactly once at mount.
@@ -516,6 +560,13 @@ function Particles({
       new URL(window.location.href).searchParams.has("particleProgress");
     if (!isTestMode) {
       Object.assign(u.uTime, { value: u.uTime.value + delta });
+    }
+    // Origin offset: viewport-pixel translation applied in the vertex shader.
+    // Updated from a ref so resize callbacks don't trigger React re-renders.
+    if (originOffsetRef && u.uOriginOffset?.value) {
+      const off = originOffsetRef.current;
+      const v = u.uOriginOffset.value as THREE.Vector2;
+      v.set(off.x, off.y);
     }
   });
 
