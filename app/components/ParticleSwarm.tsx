@@ -13,28 +13,17 @@ export interface IconTarget {
 }
 
 export interface ParticleSwarmProps {
-  /** 0..1 — accepts plain number (prototype scrubbing) or ref (production rAF). */
+  /** 0..1 — number (e.g. test fixtures) or ref (production rAF, no re-renders). */
   scrollProgress: number | MutableRefObject<number>;
   logoSrc: string;
-  /** Phase 2 inputs. When omitted (e.g. from /particle-test), defaults are used. */
-  iconTargets?: readonly IconTarget[];
-  blobCenter?: { x: number; y: number };
+  iconTargets: readonly IconTarget[];
+  blobCenter: { x: number; y: number };
   /** Pixel offset applied to every particle position in the shader, to move the
    *  whole scene from the canvas centre to (e.g.) the SVG container's centre when
    *  the Canvas is a viewport-filling wrapper rather than the SVG itself. */
   originOffsetRef?: MutableRefObject<{ x: number; y: number }>;
   className?: string;
 }
-
-/** Default targets for the prototype playground so /particle-test still works
- *  standalone. Production CogniateStory always passes its own targets derived
- *  from the rendered SVG container's bounding rect. */
-const DEFAULT_ICON_TARGETS: readonly IconTarget[] = [
-  { x: -307, y: 0, tint: [0.98, 0.404, 0.486] }, // problem (9 o'clock) — salmon
-  { x: 0, y: 317, tint: [0.675, 0.486, 0.945] }, // mission (12 o'clock) — lavender
-  { x: 307, y: 0, tint: [0.408, 0.914, 0.635] }, // insight (3 o'clock) — mint
-];
-const DEFAULT_BLOB_CENTER = { x: 0, y: -130 };
 
 /**
  * Sample N positions from an image's opaque pixels.
@@ -106,8 +95,8 @@ export default function ParticleSwarm({
         <Particles
           progress={scrollProgress}
           logoSrc={logoSrc}
-          iconTargets={iconTargets ?? DEFAULT_ICON_TARGETS}
-          blobCenter={blobCenter ?? DEFAULT_BLOB_CENTER}
+          iconTargets={iconTargets}
+          blobCenter={blobCenter}
           originOffsetRef={originOffsetRef}
         />
       </Canvas>
