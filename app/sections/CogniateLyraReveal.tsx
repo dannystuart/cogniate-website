@@ -99,6 +99,34 @@ export default function CogniateLyraReveal() {
     if (!section || !wrapper) return;
 
     const ctx = gsap.context(() => {
+      // Dev-only test hook: ?lyraProgress=0.85 forces progressRef and skips
+      // the pin so Playwright can snapshot resting states deterministically.
+      // Mirrors CogniateStory's ?particleProgress= flag. Gated on NODE_ENV
+      // so it's stripped from production bundles.
+      if (process.env.NODE_ENV !== "production") {
+        const forced = new URL(window.location.href).searchParams.get("lyraProgress");
+        if (forced !== null) {
+          const v = Math.max(0, Math.min(1, parseFloat(forced)));
+          progressRef.current = v;
+          // rAF loop drives the CSS vars off progressRef, but the video is
+          // a separate decode pipeline — prime its currentTime once metadata
+          // arrives so the right frame paints without a flash.
+          const video = videoRef.current;
+          if (video) {
+            const seekToForcedFrame = () => {
+              const t = Math.min(v / TIMING.VIDEO_END, 1) * video.duration;
+              if (Number.isFinite(t)) video.currentTime = t;
+            };
+            if (Number.isFinite(video.duration) && video.duration > 0) {
+              seekToForcedFrame();
+            } else {
+              video.addEventListener("loadedmetadata", seekToForcedFrame, { once: true });
+            }
+          }
+          return; // skip both the non-pinned path and the pinned ScrollTrigger
+        }
+      }
+
       const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -133,9 +161,17 @@ export default function CogniateLyraReveal() {
     const video = videoRef.current;
     if (!wrapper || !video) return;
 
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!isDesktop || reduced) return;
+    // Skip the loop on mobile + reduced-motion paths (those use GSAP
+    // timelines and don't read these CSS variables). Test mode runs the
+    // loop regardless of viewport so `?lyraProgress=` works at any size.
+    const isTestMode =
+      process.env.NODE_ENV !== "production" &&
+      new URL(window.location.href).searchParams.has("lyraProgress");
+    if (!isTestMode) {
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!isDesktop || reduced) return;
+    }
 
     let rafId = 0;
     let stopped = false;
