@@ -23,6 +23,10 @@ function setupNonPinnedReveal(
   wrapper: HTMLDivElement,
   video: HTMLVideoElement | null
 ) {
+  // On mobile + reduced-motion the video doesn't need the desktop fade/dim
+  // envelope — park the variable at 1 so the default of 0 doesn't hide it.
+  wrapper.style.setProperty("--video-opacity", "1");
+
   if (video) {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -222,6 +226,13 @@ export default function CogniateLyraReveal() {
         setReveal("w-create", TIMING.WORD_CREATE);
         setReveal("w-design", TIMING.WORD_DESIGN);
         setReveal("w-publish", TIMING.WORD_PUBLISH);
+
+        // Video opacity envelope — combines the fade-in (0 → 1 over 0.0–0.05) with
+        // the dim (1 → 0.3 over 0.80–0.88). `dim` ramps the *amount* to subtract,
+        // so opacity = fadeIn − dim. Outside the windows the ramps clamp flat.
+        const videoFade = ramp(p, TIMING.VIDEO_FADE_IN[0], TIMING.VIDEO_FADE_IN[1], 0, 1);
+        const videoDim = ramp(p, TIMING.VIDEO_DIM[0], TIMING.VIDEO_DIM[1], 0, 0.7);
+        wrapper.style.setProperty("--video-opacity", String(videoFade - videoDim));
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -247,7 +258,7 @@ export default function CogniateLyraReveal() {
         <video
           ref={videoRef}
           className="absolute left-0 right-0 top-0 h-[62vh] w-full object-cover"
-          style={{ objectPosition: "center 25%" }}
+          style={{ objectPosition: "center 25%", opacity: "var(--video-opacity, 0)" }}
           muted
           playsInline
           preload="auto"
