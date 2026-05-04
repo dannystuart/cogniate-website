@@ -45,17 +45,17 @@ const cards: CardData[] = [
     subtitle: "with Lyra",
     trademark: "\u00AE",
     description:
-      "Lyra is a course creation intelligence, trained on the Cogniate platform. She thinks, researches, structures, and writes your course.",
+      "Lyra reads your source material the way an instructional designer would — and writes the course back. Branded. Structured. Multilingual. Audit-ready. In minutes, not months.",
     features: [
       {
         label: "Prompt to life",
         description:
-          "Lyra is a course creation intelligence, trained on the Cogniate platform. She thinks, researches, structures, and writes your course.",
+          "Tell Lyra what you want to teach, who it's for, and where it'll run. Compliance training across four jurisdictions. Onboarding for a clinical sales team. Product education for installers. One prompt. Whole course.",
       },
       {
-        label: "Prompt to life",
+        label: "Source to course",
         description:
-          "Lyra is a course creation intelligence, trained on the Cogniate platform. She thinks, researches, structures, and writes your course.",
+          "Drop in your SOPs, IFUs, release notes, or a 200-page manual. Lyra extracts the teachable moments, sequences them by what learners need first, and structures the course around the outcome — not the document.",
       },
     ],
     layout: "content-left" as const,
@@ -66,21 +66,21 @@ const cards: CardData[] = [
   },
   {
     id: "design",
-    title: "Design",
-    subtitle: "with Studio",
-    trademark: "\u00AE",
+    title: "Rapid",
+    subtitle: "outline",
+    trademark: " ",
     description:
-      "A powerful design engine that brings your course to life. Customize every detail with professional templates and interactive components.",
+      "Lyra doesn't generate slides. She — it — generates an architecture. Modules, dependencies, prerequisites, assessments, and the regional variants you'll need before you've thought to ask.",
     features: [
       {
-        label: "Drag & drop",
+        label: "Branching",
         description:
-          "Build beautiful courses with our intuitive editor. Choose from professional templates, no design skills needed.",
+          "Knowledge DNA™ links every module to its source, its prerequisites, and its regional variant. When the underlying SOP changes, the course updates with it.",
       },
       {
-        label: "Brand ready",
+        label: "Governed by design",
         description:
-          "Apply your brand guidelines automatically. Colors, fonts, and layouts that match your organization\u2019s identity.",
+          "Cogniate's Rules-Based Governance Engine enforces instructional quality before anything ships. No hallucinated facts. No off-brand language. No compliance gaps.",
       },
     ],
     layout: "content-right" as const,
@@ -96,24 +96,24 @@ const cards: CardData[] = [
     glowColor: "rgba(252, 232, 158, 0.12)",
     pills: [
       {
-        label: "Course Editor",
+        label: "Course editor",
         description:
-          "A powerful editing experience that brings your course to life. Customize every detail with professional tools.",
+          "A powerful editing experience that brings a library of pre-built components to customise your course.",
       },
       {
         label: "Analytics",
         description:
-          "Track learner progress and engagement with real-time dashboards. Understand what works and optimize.",
+          "Track learner progress and engagement with real-time dashboards. Understand what courses are working. Optimise and improve.",
       },
       {
-        label: "Integrations",
+        label: "Branded as yours",
         description:
-          "Connect seamlessly with your existing LMS, HR systems, and collaboration tools out of the box.",
+          "Logo, palette, type, voice — all baked in. TTRO ships TTRO courses. Roche ships Roche. IKEA ships IKEA. Your campus. Your brand. Cogniate is invisible.",
       },
       {
-        label: "Collaboration",
+        label: "Audit-ready output",
         description:
-          "Work together in real-time with your team. Review, comment, and iterate on course content together.",
+          "Every course ships with completion data, version history, and source traceability built in. SCORM, xAPI, or native Cogniate. The auditor's question is answered before it's asked.",
       },
     ],
     visuals: [
@@ -237,9 +237,8 @@ function PlatformCard({
 
       {/* Content side */}
       <div
-        className={`relative z-10 shrink-0 w-full lg:w-[400px] xl:w-[455px] ${
-          !isLeft ? "lg:order-2" : ""
-        }`}
+        className={`relative z-10 shrink-0 w-full lg:w-[400px] xl:w-[455px] ${!isLeft ? "lg:order-2" : ""
+          }`}
       >
         {/* Title block */}
         <div className="mb-4 lg:mb-5">
@@ -275,11 +274,10 @@ function PlatformCard({
 
       {/* Placeholder side — extends to card edge, clipped by card border-radius */}
       <div
-        className={`relative z-10 w-full lg:flex-1 overflow-hidden rounded-[20px] ${
-          isLeft
-            ? "lg:rounded-r-none lg:-mr-[60px] xl:-mr-[80px]"
-            : "lg:rounded-l-none lg:-ml-[60px] xl:-ml-[80px] lg:order-1"
-        }`}
+        className={`relative z-10 w-full lg:flex-1 overflow-hidden rounded-[20px] ${isLeft
+          ? "lg:rounded-r-none lg:-mr-[60px] xl:-mr-[80px]"
+          : "lg:rounded-l-none lg:-ml-[60px] xl:-ml-[80px] lg:order-1"
+          }`}
         style={{
           ...(card.imageAspectRatio
             ? { aspectRatio: card.imageAspectRatio }
@@ -336,23 +334,6 @@ export default function Platform() {
     if (!section || !title || cardEls.length !== cards.length) return;
 
     const ctx = gsap.context(() => {
-      /* --- Title entrance --- */
-      gsap.fromTo(
-        title,
-        { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: section,
-            start: "top 80%",
-            toggleActions: "play none none none",
-          },
-        }
-      );
-
       /* --- Desktop: scrub-based card stack animation --- */
       const mm = gsap.matchMedia();
 
@@ -379,13 +360,20 @@ export default function Platform() {
           },
         });
 
-        // Scroll the title out of view first to make room for cards
-        tl.to(title, {
-          y: "-100%",
-          opacity: 0,
-          duration: 0.3,
-          ease: "none",
-        }, 0);
+        // Scroll the title out of view. fromTo + immediateRender:false anchors
+        // the start values to the timeline so a refresh deep in the section
+        // can't leave the title stuck at its visible state.
+        tl.fromTo(
+          title,
+          { y: 0, opacity: 1, immediateRender: false },
+          {
+            y: "-100%",
+            opacity: 0,
+            duration: 0.3,
+            ease: "none",
+          },
+          0
+        );
 
         // Build N-1 transition segments
         // Each segment is self-contained: enter completes before next exit starts
@@ -425,8 +413,24 @@ export default function Platform() {
         }
       });
 
-      /* --- Mobile: simple fade-in per card --- */
+      /* --- Mobile: title entrance + simple fade-in per card --- */
       mm.add("(max-width: 1023px)", () => {
+        gsap.fromTo(
+          title,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: section,
+              start: "top 80%",
+              end: "top top",
+              scrub: 0.6,
+            },
+          }
+        );
+
         cardEls.forEach((card, i) => {
           gsap.fromTo(
             card,
@@ -453,6 +457,7 @@ export default function Platform() {
 
   return (
     <section
+      id="platform"
       ref={sectionRef}
       data-testid="platform-section"
       className="relative bg-bg-secondary"

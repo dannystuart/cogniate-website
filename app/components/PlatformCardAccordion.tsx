@@ -116,7 +116,10 @@ function initExpandingFeaturePills(wrap: HTMLElement) {
   const getHeights = (item: HTMLElement, expandedW: string) => {
     const buttonH = measureButtonH(item);
     const innerH = measureInnerH(item, expandedW);
-    const openH = Math.max(buttonH, innerH);
+    // Open pill is fluid to its content — innerH already includes padding,
+    // so no artificial floor. buttonH is only used as a safety net in case
+    // innerH measurement returns 0 (e.g. content not yet in the DOM).
+    const openH = innerH || buttonH;
     return { buttonH, openH };
   };
 
@@ -160,10 +163,8 @@ function initExpandingFeaturePills(wrap: HTMLElement) {
     item.setAttribute("data-active", "true");
     setItemA11y(item, true);
     setWrapActive(true);
-    const targetW =
-      expandedW ||
-      `${collapsedWidthPx.get(item) || Math.ceil(item.getBoundingClientRect().width)}px`;
-    animateBox(item, { height: openH, width: targetW });
+    // Width is left alone — every pill keeps the same width regardless of state.
+    animateBox(item, { height: openH });
   };
 
   const closeItem = (item: HTMLElement) => {
@@ -171,10 +172,7 @@ function initExpandingFeaturePills(wrap: HTMLElement) {
     const { buttonH } = getHeights(item, expandedW);
     item.setAttribute("data-active", "false");
     setItemA11y(item, false);
-    const targetW =
-      collapsedWidthPx.get(item) ||
-      Math.ceil(item.getBoundingClientRect().width);
-    animateBox(item, { height: buttonH, width: targetW });
+    animateBox(item, { height: buttonH });
   };
 
   const switchTo = (nextIndex: number) => {
@@ -273,14 +271,10 @@ function initExpandingFeaturePills(wrap: HTMLElement) {
       const item = items[current];
       const expandedW = getExpandedWidth();
       const { openH } = getHeights(item, expandedW);
-      const targetW = expandedW || "";
       if (prefersReducedMotion) {
         item.style.height = `${openH}px`;
-        if (targetW) item.style.width = targetW;
       } else {
-        const fallbackW = `${Math.ceil(item.getBoundingClientRect().width)}px`;
-        gsap.set(item, { height: openH, width: targetW || fallbackW });
-        if (targetW) item.style.width = targetW;
+        gsap.set(item, { height: openH });
       }
     } else {
       items.forEach((item) => {
@@ -332,25 +326,6 @@ export default function PlatformCardAccordion({
         aria-hidden
         className="absolute inset-0 bg-[#141318] pointer-events-none rounded-[20px]"
       />
-
-      {/* Decorative vertical lines */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none overflow-hidden rounded-[20px]"
-      >
-        {[44, 54, 64, 74, 84, 94, 104].map((pct) => (
-          <div
-            key={pct}
-            className="absolute top-0 h-[140%] -translate-y-[15%]"
-            style={{
-              left: `${pct}%`,
-              width: "1px",
-              background:
-                "linear-gradient(to bottom, transparent, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent)",
-            }}
-          />
-        ))}
-      </div>
 
       {/* Decorative ellipse glow */}
       <div
@@ -424,8 +399,6 @@ export default function PlatformCardAccordion({
                       >
                         <p className="feature-pills__item-body">
                           {pill.label}
-                          <br />
-                          <br />
                           <span className="feature-pills__item-body-span">
                             {pill.description}
                           </span>

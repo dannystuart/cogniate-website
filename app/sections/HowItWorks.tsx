@@ -146,6 +146,7 @@ export default function HowItWorks() {
 
   return (
     <section
+      id="how-it-works"
       ref={sectionRef}
       data-testid="how-it-works-section"
       className="relative w-full bg-[#111112] overflow-hidden pt-20 pb-20 lg:pt-0 lg:pb-[220px] lg:-mt-[30vh]"
@@ -404,7 +405,7 @@ export default function HowItWorks() {
                 <img
                   src={card.image}
                   alt=""
-                  className="w-full h-full object-cover opacity-70 transition-transform duration-400 ease-out group-hover:scale-105"
+                  className="w-full h-full object-cover opacity-40 transform-gpu will-change-transform transition-all duration-[600ms] ease-out group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-2"
                   draggable={false}
                 />
               </div>

@@ -20,6 +20,7 @@ export default function Landscape() {
   const landscapeNumberRef = useRef<HTMLSpanElement>(null);
   const landscapeEyebrowRef = useRef<HTMLDivElement>(null);
   const landscapeSubtitleRef = useRef<HTMLParagraphElement>(null);
+  const landscapeFootnoteRef = useRef<HTMLParagraphElement>(null);
 
   // Opportunity stat block
   const opportunityBlockRef = useRef<HTMLDivElement>(null);
@@ -69,6 +70,7 @@ export default function Landscape() {
         [
           landscapeEyebrowRef.current,
           landscapeSubtitleRef.current,
+          landscapeFootnoteRef.current,
           opportunityEyebrowRef.current,
           opportunitySubtitleRef.current,
         ],
@@ -91,6 +93,7 @@ export default function Landscape() {
             opportunityNumberWrapRef.current,
             landscapeEyebrowRef.current,
             landscapeSubtitleRef.current,
+            landscapeFootnoteRef.current,
             opportunityEyebrowRef.current,
             opportunitySubtitleRef.current,
             newStateRef.current,
@@ -98,7 +101,7 @@ export default function Landscape() {
           { opacity: 1, y: 0 }
         );
         gsap.set(oldStateRef.current, { opacity: 0 });
-        if (landscapeNumberRef.current) landscapeNumberRef.current.textContent = "361";
+        if (landscapeNumberRef.current) landscapeNumberRef.current.textContent = "401";
         if (opportunityNumberRef.current) opportunityNumberRef.current.textContent = "12";
         if (count154Ref.current) count154Ref.current.textContent = "154";
         return;
@@ -136,7 +139,7 @@ export default function Landscape() {
         .to(
           landscapeCounter,
           {
-            val: 361,
+            val: 401,
             duration: 1.0,
             ease: "power2.out",
             onUpdate: () => {
@@ -150,7 +153,11 @@ export default function Landscape() {
           0
         )
         .to(
-          [landscapeEyebrowRef.current, landscapeSubtitleRef.current],
+          [
+            landscapeEyebrowRef.current,
+            landscapeSubtitleRef.current,
+            landscapeFootnoteRef.current,
+          ],
           {
             opacity: 1,
             y: 0,
@@ -290,7 +297,7 @@ export default function Landscape() {
           ref={headingRef}
           className="landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]"
         >
-          Imagine being 150x faster.
+          Imagine being up to 150x faster.
         </h2>
 
         {/* Stats container - uses absolute positioning on desktop for diagonal stagger */}
@@ -334,17 +341,25 @@ export default function Landscape() {
                     $<span ref={landscapeNumberRef}>0</span>{" "}
                   </span>
                   <span className="text-[20px] sm:text-[24px] lg:text-[32px] font-medium text-white tracking-[-0.04em] pb-1 sm:pb-2 lg:pb-3">
-                    billion
+                    billion*
                   </span>
                 </div>
 
                 {/* Subtitle */}
-                <p
-                  ref={landscapeSubtitleRef}
-                  className="text-body sm:text-body-lg font-light leading-[1.3] text-text-muted tracking-[-0.01em]"
-                >
-                  global annual L&amp;D spend
-                </p>
+                <div className="flex flex-col">
+                  <p
+                    ref={landscapeSubtitleRef}
+                    className="text-body sm:text-body-lg font-light leading-[1.3] text-text-muted tracking-[-0.01em] mb-[5px]"
+                  >
+                    global workplace training spend.
+                  </p>
+                  <p
+                    ref={landscapeFootnoteRef}
+                    className="text-[12px] sm:text-[13px] font-light italic leading-[1.2] text-text-muted/60 tracking-[-0.01em]"
+                  >
+                    *2024 Statista report
+                  </p>
+                </div>
               </div>
             </div>
           </div>

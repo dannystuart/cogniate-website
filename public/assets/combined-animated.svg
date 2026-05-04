@@ -13,7 +13,10 @@
     </style>
 
     <!-- Hoisted from SVG1: shared atmospheric ellipse for both phases -->
-    <radialGradient id="bgGlow" cx="110%" cy="55%" r="95%">
+    <radialGradient id="bgGlow"
+        gradientUnits="userSpaceOnUse"
+        cx="2241" cy="806" r="1919"
+        gradientTransform="translate(2241 806) scale(1 0.7254) translate(-2241 -806)">
       <stop offset="0%" stop-color="#5a3275" stop-opacity="0.95"/>
       <stop offset="20%" stop-color="#3d2452" stop-opacity="0.7"/>
       <stop offset="45%" stop-color="#1f1228" stop-opacity="0.4"/>
@@ -25,9 +28,10 @@
   <!-- Unified base canvas -->
   <rect width="2058" height="1465" fill="#040208"/>
 
-  <!-- Shared atmospheric ellipse — same position and color in both phases.
-       Box matches where SVG1's bg rect renders in the parent. -->
-  <rect x="19" y="0" width="2020" height="1465" fill="url(#bgGlow)"/>
+  <!-- Shared atmospheric ellipse — full-canvas rect now, with userSpaceOnUse
+       gradient that places the ellipse at the same pixel position SVG1's
+       version landed at. No right-side seam. -->
+  <rect width="2058" height="1465" fill="url(#bgGlow)"/>
 
   <!-- ============ PHASE 1: create-ui prompt + loading bar ============ -->
   <g class="phase-1">

@@ -29,7 +29,7 @@ export default function ComponentExcerpts() {
       {/* Section h2 excerpt */}
       <div className="border border-white/10 rounded-lg p-8 bg-bg-secondary">
         <h2 className="landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet lg:text-h2-desktop font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]">
-          Imagine being 150x faster.
+          Imagine being up to 150x faster.*
         </h2>
       </div>
     </div>

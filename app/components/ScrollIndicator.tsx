@@ -51,42 +51,43 @@ export default function ScrollIndicator() {
     gsap.set(hGlowR, { opacity: 0, width: 0 });
     gsap.set(scrollText, { opacity: 0.6, y: 0 });
 
-    const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.8 });
+    const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.4 });
     timelineRef.current = tl;
 
     // === PHASE 1: VERTICAL — glow travels the full line, top to bottom ===
-    tl.to(vGlow, { opacity: 1, duration: 0.3 }, 0);
-    tl.to(scrollText, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 0);
+    tl.to(vGlow, { opacity: 1, duration: 0.25 }, 0);
+    tl.to(scrollText, { opacity: 1, y: 0, duration: 0.25, ease: "none" }, 0);
 
+    // Steady, even traversal — no easing so the pulse feels regular
     tl.to(vGlow, {
       top: vLineHeight - 40,
-      duration: 1.8,
-      ease: "power2.inOut",
+      duration: 1.5,
+      ease: "none",
     });
 
     // Scroll text pulses as the glow passes through
     tl.to(
       scrollText,
-      { opacity: 0.3, y: 4, duration: 0.8, ease: "power2.inOut" },
-      "-=1.0"
+      { opacity: 0.3, y: 4, duration: 0.8, ease: "none" },
+      "-=0.9"
     );
 
     // Fade out vertical glow at the bottom — completes BEFORE horizontal starts
-    tl.to(vGlow, { opacity: 0, duration: 0.25 });
+    tl.to(vGlow, { opacity: 0, duration: 0.2 });
 
     if (isDesktop) {
-      // === PHASE 2: HORIZONTAL — starts only after vertical completes ===
+      // === PHASE 2: HORIZONTAL — matched cadence to the vertical phase ===
       tl.set(hGlowL, { opacity: 1, width: 0 });
       tl.set(hGlowR, { opacity: 1, width: 0 });
 
-      tl.to(hGlowL, { width: "50%", duration: 1.0, ease: "power2.out" });
+      tl.to(hGlowL, { width: "50%", duration: 1.5, ease: "none" });
       tl.to(
         hGlowR,
-        { width: "50%", duration: 1.0, ease: "power2.out" },
+        { width: "50%", duration: 1.5, ease: "none" },
         "<"
       );
 
-      tl.to([hGlowL, hGlowR], { opacity: 0, duration: 0.5 }, "+=0.15");
+      tl.to([hGlowL, hGlowR], { opacity: 0, duration: 0.4 }, "+=0.1");
     }
 
     // === PHASE 3: RESET ===

@@ -12,8 +12,8 @@ gsap.registerPlugin(ScrollTrigger);
 // up to ~125 frames before painting — the source of the original jerk. Canvas
 // + a pre-decoded image array makes every paint O(1).
 const FRAME_COUNT = 151;
-const FRAME_W = 1280;
-const FRAME_H = 1056;
+const FRAME_W = 1920;
+const FRAME_H = 1586;
 const frameSrc = (i: number) =>
   `/assets/lyra-scrub/frame-${String(i + 1).padStart(3, "0")}.webp`;
 
@@ -45,6 +45,18 @@ function setupNonPinnedReveal(
       wrapper.querySelector(".lyra-wordmark"),
       { opacity: 0, y: 16, filter: "blur(2px)" },
       { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power2.out" }
+    )
+    .fromTo(
+      wrapper.querySelector(".lyra-still"),
+      { opacity: 0 },
+      { opacity: 0.2, duration: 0.8, ease: "power2.out" },
+      "-=0.2"
+    )
+    .fromTo(
+      wrapper.querySelector(".lyra-bottom-fade"),
+      { opacity: 0 },
+      { opacity: 1, duration: 0.8, ease: "power2.out" },
+      "<"
     )
     .fromTo(
       wrapper.querySelector(".lyra-tagline"),
@@ -89,6 +101,10 @@ const TIMING = {
   // with a still-visible dust-Lyra.
   LYRA: [0.73, 0.81] as const,
   TAGLINE: [0.79, 0.86] as const,
+  // Dust-puff still — fades in behind the wordmark stack once Lyra has
+  // resolved, so the foreground text reads against a textured backdrop
+  // rather than flat dark.
+  BACKGROUND_STILL: [0.81, 0.92] as const,
   WORD_CREATE: [0.87, 0.91] as const,
   WORD_DESIGN: [0.91, 0.95] as const,
   WORD_PUBLISH: [0.95, 1.0] as const,
@@ -292,6 +308,14 @@ export default function CogniateLyraReveal() {
         };
         setReveal("lyra", TIMING.LYRA);
         setReveal("tagline", TIMING.TAGLINE);
+        wrapper.style.setProperty(
+          "--still-opacity",
+          String(ramp(p, TIMING.BACKGROUND_STILL[0], TIMING.BACKGROUND_STILL[1], 0, 0.2))
+        );
+        wrapper.style.setProperty(
+          "--bottom-fade-opacity",
+          String(ramp(p, TIMING.BACKGROUND_STILL[0], TIMING.BACKGROUND_STILL[1], 0, 1))
+        );
         setReveal("w-create", TIMING.WORD_CREATE);
         setReveal("w-design", TIMING.WORD_DESIGN);
         setReveal("w-publish", TIMING.WORD_PUBLISH);
@@ -328,6 +352,42 @@ export default function CogniateLyraReveal() {
       className="relative w-full bg-bg-secondary overflow-hidden"
     >
       <div ref={pinWrapperRef} className="relative min-h-screen w-full">
+        {/* Dust-puff still — sits at z-bottom, fades in once the wordmark has
+            resolved so the foreground stack reads against a textured backdrop
+            instead of flat dark. Edges feathered via a radial mask so the
+            rectangular bounds don't cut a hard line across the section.
+            Peak opacity capped at 0.5 so the puff sits as a subtle backdrop
+            rather than competing with the foreground text. */}
+        <img
+          className="lyra-still pointer-events-none absolute inset-0 size-full object-cover"
+          src="/assets/lyra-still.png"
+          alt=""
+          aria-hidden
+          style={{
+            opacity: "var(--still-opacity, 0)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 60% 65% at 50% 50%, black 35%, transparent 100%)",
+            maskImage:
+              "radial-gradient(ellipse 60% 65% at 50% 50%, black 35%, transparent 100%)",
+          }}
+        />
+
+        {/* Bottom-edge fade — bg-secondary at the very bottom, transparent
+            above, climbing 50vh up the viewport so the still's lower edge
+            feathers softly into the section background instead of cutting a
+            hard line. Fades in alongside the still so it only appears once
+            there's something to mask. */}
+        <div
+          aria-hidden
+          className="lyra-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 z-[1]"
+          style={{
+            height: "60vh",
+            background:
+              "linear-gradient(to top, var(--color-bg-secondary, #101011) 0%, var(--color-bg-secondary, #101011) 10%, transparent 100%)",
+            opacity: "var(--bottom-fade-opacity, 0)",
+          }}
+        />
+
         {/* Canvas — full viewport, object-cover via intrinsic dimensions. The
             source frames already have dark edges baked into their gradient, so
             they blend into bg-secondary without an explicit mask. Fades fully
@@ -365,39 +425,30 @@ export default function CogniateLyraReveal() {
             inner <h2> can drive its Y reveal with a clean translateY (matches
             the halo + tagline pattern). */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+          className="absolute left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2"
           style={{ top: `${LYRA_TOP_VH}vh` }}
         >
-          <h2
-            className="lyra-wordmark text-center"
+          <img
+            className="lyra-wordmark block"
+            src={encodeURI("/assets/Lyra®.svg")}
+            alt="Lyra"
+            width={193}
+            height={83}
             style={{
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "clamp(64px, 7vw, 96px)",
-              lineHeight: 1.1,
-              letterSpacing: "-0.04em",
-              backgroundImage:
-                "linear-gradient(164.7deg, #ffffff 3%, rgb(146,100,205) 98%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
+              height: "clamp(64px, 7vw, 96px)",
+              width: "auto",
               opacity: "var(--lyra-opacity, 0)",
               transform: "translateY(var(--lyra-y, 16px))",
               filter: "blur(var(--lyra-blur, 2px))",
             }}
-          >
-            Lyra
-            <sup style={{ fontWeight: 300, fontSize: "0.557em", verticalAlign: "super" }}>
-              ®
-            </sup>
-          </h2>
+          />
         </div>
 
         {/* Tagline + CDP — sit just below the wordmark in the upper third, so
             the whole stack reads as one block. Stacked absolutely so they don't
             push other elements; centred horizontally. */}
         <div
-          className="pointer-events-none absolute inset-x-0 flex flex-col items-center"
+          className="pointer-events-none absolute inset-x-0 z-[2] flex flex-col items-center"
           style={{ top: `${LOWER_TEXT_TOP_VH}vh` }}
         >
           <p

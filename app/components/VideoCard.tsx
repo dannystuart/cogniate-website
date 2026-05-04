@@ -51,10 +51,11 @@ export default function VideoCard() {
           className="mini-showreel-video absolute inset-0 w-full h-full object-cover"
           playsInline
           preload="metadata"
+          poster="/assets/promo-poster.jpg"
           muted
           loop
         >
-          <source src="/videos/hero-bg.mp4" type="video/mp4" />
+          <source src="/assets/promo-video.mp4" type="video/mp4" />
         </video>
 
         {/* Click overlay opens the lightbox */}

@@ -96,6 +96,17 @@ body {
   overflow-x: hidden;
 }
 
+/* Hide page during scroll-position restoration after a refresh.
+   The pre-paint script in <head> sets [data-restoring] when a saved
+   scroll exists; ScrollRestorer clears it after scrollTo + ScrollTrigger
+   refresh. Page background remains so there's no white flash. */
+html[data-restoring] body {
+  opacity: 0;
+}
+body {
+  transition: opacity 200ms ease-out;
+}
+
 /* ============================================
    HEADING GRADIENT TEXT
    ============================================ */
@@ -188,12 +199,25 @@ body {
 .feature-pills__item-bg {
   z-index: 0;
   background-color: #212027;
-  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
   width: 100%;
   height: 100%;
   position: absolute;
   inset: 0;
+  transition: background-color 200ms ease;
+}
+
+/* Subtle hover lift — only on closed pills, never the active/open one. */
+[data-feature-pills-item][data-active="false"]:hover .feature-pills__item-bg {
+  background-color: #2a2930;
+}
+
+[data-feature-pills-item][data-active="false"]:hover .feature-pills__item-icon {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.feature-pills__item-icon {
+  transition: background-color 200ms ease;
 }
 
 /* --- Trigger button --- */
@@ -205,19 +229,20 @@ body {
   cursor: pointer;
   display: flex;
   flex-flow: row;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   padding: 1em 1.25em;
   position: relative;
   color: inherit;
   font-family: inherit;
+  width: 100%;
 }
 
 .feature-pills__item-label {
   letter-spacing: -0.015em;
   white-space: nowrap;
   flex: none;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 500;
   color: #ffffff;
 }
@@ -234,26 +259,6 @@ body {
   height: 36px;
   display: flex;
   position: relative;
-  box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, 0.25);
-}
-
-.feature-pills__item-icon::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.1));
-  pointer-events: none;
-}
-
-.feature-pills__item-icon::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.05),
-    inset 0px -1px 0px 0px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
 }
 
 .feature-pills__item-icon-bar {
@@ -284,27 +289,30 @@ body {
 }
 
 .feature-pills__item-inner {
-  max-width: var(--content-item-expanded);
   flex-flow: column;
   justify-content: flex-start;
   align-items: flex-start;
-  width: max-content;
-  padding: 1.25em 1.5em 1.5em;
+  width: 100%;
+  padding: 1em 1.25em;
   display: flex;
+  gap: 1em;
 }
 
 .feature-pills__item-body {
   margin-bottom: 0;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 500;
+  line-height: 1.3;
   color: #ffffff;
 }
 
 .feature-pills__item-body-span {
+  display: block;
+  margin-top: 0.875em;
   font-size: 14px;
   font-weight: 400;
   color: rgba(244, 238, 255, 0.8);
-  line-height: 20px;
+  line-height: 1.45;
 }
 
 /* --- Visual panel --- */
@@ -458,6 +466,478 @@ body {
 body[data-mini-showreel-active="true"] [data-scroll-indicator] {
   opacity: 0;
   pointer-events: none;
+}
+
+/* ============================================
+   PRICING — popular halo pulse + card hover
+   ============================================ */
+
+@keyframes pricing-halo-pulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+/* Default (non-popular) card */
+.pricing-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 12px 40px -20px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+  transform: translateY(0);
+}
+
+.pricing-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.75),
+    0 0 30px -8px rgba(255, 255, 255, 0.10),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-6px);
+}
+
+/* Popular card — always lifted on lg, lifts further on hover */
+.pricing-card.is-popular {
+  border: 1px solid rgba(183, 139, 249, 0.32);
+  box-shadow:
+    0 24px 60px -24px rgba(183, 139, 249, 0.30),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 1024px) {
+  .pricing-card.is-popular {
+    transform: translateY(-8px);
+  }
+}
+
+.pricing-card.is-popular:hover {
+  border-color: rgba(212, 169, 255, 0.55);
+  box-shadow:
+    0 32px 80px -20px rgba(183, 139, 249, 0.45),
+    0 0 40px -8px rgba(212, 169, 255, 0.25),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
+  transform: translateY(-10px);
+}
+
+@media (min-width: 1024px) {
+  .pricing-card.is-popular:hover {
+    transform: translateY(-14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-pricing-card] *[style*="pricing-halo-pulse"] {
+    animation: none !important;
+  }
+  .pricing-card,
+  .pricing-card.is-popular,
+  .pricing-card:hover,
+  .pricing-card.is-popular:hover {
+    transform: none;
+  }
+}
+
+/* ============================================
+   COGNIATE HUBSPOT FORM (embedded, restyled)
+   ============================================ */
+
+.cogniate-hubspot-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cogniate-hubspot-form fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  max-width: none !important;
+}
+
+.cogniate-hubspot-form .hs-form-field {
+  display: block;
+  width: 100%;
+}
+
+.cogniate-hubspot-form .hs-form-field + .hs-form-field {
+  margin-top: 16px;
+}
+
+/* Field-level label: hidden for text inputs (placeholder takes its place),
+   visible as a header for selects / radios / checkboxes. */
+.cogniate-hubspot-form .hs-hidden-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cogniate-hubspot-form .hs-field-label-visible {
+  display: block;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 8px 4px;
+  font-weight: 500;
+}
+
+.cogniate-hubspot-form .hs-field-label-visible .hs-form-required {
+  color: var(--color-accent-coral);
+  margin-left: 2px;
+}
+
+.cogniate-hubspot-form .hs-field-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: -4px 0 8px 4px;
+  display: block;
+}
+
+.cogniate-hubspot-form .input {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+.cogniate-hubspot-form input.hs-input,
+.cogniate-hubspot-form select.hs-input,
+.cogniate-hubspot-form textarea.hs-input {
+  width: 100%;
+  height: 56px;
+  padding: 0 24px;
+  border-radius: 9999px;
+  background-color: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 200ms ease;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.cogniate-hubspot-form textarea.hs-input {
+  height: auto;
+  min-height: 120px;
+  padding: 16px 24px;
+  border-radius: 24px;
+  resize: vertical;
+}
+
+.cogniate-hubspot-form input.hs-input::placeholder,
+.cogniate-hubspot-form textarea.hs-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.cogniate-hubspot-form input.hs-input:focus,
+.cogniate-hubspot-form select.hs-input:focus,
+.cogniate-hubspot-form textarea.hs-input:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.cogniate-hubspot-form input.invalid.hs-input,
+.cogniate-hubspot-form input.hs-input.error,
+.cogniate-hubspot-form input.hs-input.invalid {
+  border-color: var(--color-accent-coral);
+}
+
+.cogniate-hubspot-form .hs-error-msgs {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0 24px;
+}
+
+.cogniate-hubspot-form .hs-error-msg,
+.cogniate-hubspot-form .hs-main-font-element {
+  color: var(--color-accent-coral);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.cogniate-hubspot-form .hs-richtext,
+.cogniate-hubspot-form .hs-richtext p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.cogniate-hubspot-form .hs_submit,
+.cogniate-hubspot-form .actions {
+  margin-top: 8px;
+}
+
+.cogniate-hubspot-form input.hs-button {
+  width: 100%;
+  height: 64px;
+  padding: 0 24px;
+  border-radius: 9999px;
+  background-color: #ffffff;
+  color: #1d2026;
+  font-size: 20px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 0;
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.cogniate-hubspot-form input.hs-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 36px -8px rgba(255, 255, 255, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.cogniate-hubspot-form input.hs-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Radio / checkbox lists */
+.cogniate-hubspot-form ul.inputs-list,
+.cogniate-hubspot-form .inputs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cogniate-hubspot-form ul.inputs-list > li,
+.cogniate-hubspot-form .inputs-list > li {
+  margin: 0;
+  padding: 0;
+}
+
+.cogniate-hubspot-form .hs-form-booleancheckbox-display,
+.cogniate-hubspot-form .hs-form-checkbox-display,
+.cogniate-hubspot-form .hs-form-radio-display,
+.cogniate-hubspot-form .hs-form-booleancheckbox label,
+.cogniate-hubspot-form .hs-form-checkbox label,
+.cogniate-hubspot-form .hs-form-radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.cogniate-hubspot-form .hs-form-booleancheckbox-display > span,
+.cogniate-hubspot-form .hs-form-checkbox-display > span,
+.cogniate-hubspot-form .hs-form-radio-display > span {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Custom radios — coral fill, dark transparent ring */
+.cogniate-hubspot-form input[type="radio"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px;
+  min-height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  aspect-ratio: 1 / 1;
+  padding: 0 !important;
+  margin: 0;
+  box-sizing: border-box;
+  border-radius: 9999px !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  flex: 0 0 20px;
+  vertical-align: middle;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+.cogniate-hubspot-form input[type="radio"]:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.cogniate-hubspot-form input[type="radio"]:checked {
+  border-color: var(--color-accent-coral);
+}
+
+.cogniate-hubspot-form input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background-color: var(--color-accent-coral);
+}
+
+.cogniate-hubspot-form input[type="radio"]:focus-visible {
+  outline: 2px solid rgba(250, 103, 124, 0.5);
+  outline-offset: 2px;
+}
+
+/* Custom checkboxes — coral fill with white check */
+.cogniate-hubspot-form input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px;
+  min-height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  aspect-ratio: 1 / 1;
+  padding: 0 !important;
+  margin: 0;
+  box-sizing: border-box;
+  border-radius: 6px !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  flex: 0 0 20px;
+  vertical-align: middle;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+.cogniate-hubspot-form input[type="checkbox"]:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.cogniate-hubspot-form input[type="checkbox"]:checked {
+  border-color: var(--color-accent-coral);
+  background-color: var(--color-accent-coral);
+}
+
+.cogniate-hubspot-form input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #1d2026;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.cogniate-hubspot-form input[type="checkbox"]:focus-visible {
+  outline: 2px solid rgba(250, 103, 124, 0.5);
+  outline-offset: 2px;
+}
+
+.cogniate-hubspot-form .legal-consent-container,
+.cogniate-hubspot-form .legal-consent-container p {
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cogniate-hubspot-form .legal-consent-container a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: underline;
+}
+
+.cogniate-hubspot-form .submitted-message {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* ============================================
+   LEGAL PROSE (Privacy / Terms)
+   ============================================ */
+
+.legal-prose {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 16px;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+}
+
+@media (min-width: 768px) {
+  .legal-prose {
+    font-size: 17px;
+  }
+}
+
+.legal-prose h2 {
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  margin: 0 0 16px 0;
+}
+
+@media (min-width: 768px) {
+  .legal-prose h2 {
+    font-size: 24px;
+  }
+}
+
+.legal-prose p {
+  margin: 0 0 14px 0;
+}
+
+.legal-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose ul {
+  list-style: none;
+  margin: 0 0 14px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legal-prose ul li {
+  position: relative;
+  padding-left: 22px;
+}
+
+.legal-prose ul li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0.7em;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: var(--color-accent-purple);
+  opacity: 0.85;
+}
+
+.legal-prose strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+}
+
+.legal-prose a {
+  color: #ffffff;
+  text-decoration: underline;
+  text-decoration-color: rgba(183, 139, 249, 0.45);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 200ms ease, color 200ms ease;
+}
+
+.legal-prose a:hover {
+  color: var(--color-accent-purple-light);
+  text-decoration-color: var(--color-accent-purple-light);
 }
 
 /* CogniateLyraReveal — pull the section up by 100vh on desktop so it overlaps
