@@ -9,9 +9,17 @@ import AuthoringSection from "../components/pricing/AuthoringSection";
 // import AddOnsSection from "../components/pricing/AddOnsSection";
 
 export const metadata: Metadata = {
-  title: "Pricing — Cogniate",
+  title: "Pricing",
   description:
     "Plans for solo creators, teams, and enterprises. Authoring, publishing, and stackable boosts.",
+  alternates: { canonical: "/pricing" },
+  openGraph: {
+    title: "Pricing · Cogniate",
+    description:
+      "Plans for solo creators, teams, and enterprises. Authoring, publishing, and stackable boosts.",
+    url: "/pricing",
+    type: "website",
+  },
 };
 
 export default function PricingPage() {

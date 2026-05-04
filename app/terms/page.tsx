@@ -3,9 +3,11 @@ import NavMenu from "../components/NavMenu";
 import Footer from "../sections/Footer";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Cogniate",
+  title: "Terms of Service",
   description:
     "The terms that govern access to and use of the Cogniate platform.",
+  alternates: { canonical: "/terms" },
+  robots: { index: true, follow: true },
 };
 
 const lastUpdated = "4 May 2026";

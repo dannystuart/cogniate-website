@@ -3,9 +3,11 @@ import NavMenu from "../components/NavMenu";
 import Footer from "../sections/Footer";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Cogniate",
+  title: "Privacy Policy",
   description:
     "How Cogniate collects, uses, and protects information across our learning platform.",
+  alternates: { canonical: "/privacy" },
+  robots: { index: true, follow: true },
 };
 
 const lastUpdated = "4 May 2026";
