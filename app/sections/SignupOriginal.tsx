@@ -1,11 +1,13 @@
 "use client";
 
+// Preserved snapshot of the original Signup design (pre-client-revisions).
+// Not imported by any route — kept for reference / easy restore.
+
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Footer from "./Footer";
-import { useFormModal } from "../lib/form-modal/FormModalProvider";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,9 +26,7 @@ const offers = [
   },
 ];
 
-
-export default function Signup() {
-  const { open: openFormModal } = useFormModal();
+export default function SignupOriginal() {
   const sectionRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const offersRef = useRef<HTMLDivElement>(null);
@@ -143,12 +143,12 @@ export default function Signup() {
           </p>
         </div>
 
-        {/* Two-column: Offers + CTA */}
-        <div className="flex flex-col lg:flex-row gap-10 md:gap-12 lg:gap-[140px] items-center lg:items-center">
+        {/* Two-column: Offers + Form */}
+        <div className="flex flex-col lg:flex-row gap-10 md:gap-12 lg:gap-[140px] items-center lg:items-start">
           {/* Left: Offers */}
           <div
             ref={offersRef}
-            className="flex flex-col gap-4 w-full lg:w-auto lg:flex-1 items-center lg:items-end"
+            className="flex flex-col gap-4 w-full lg:w-auto lg:flex-1 items-end"
           >
             {offers.map((offer, i) => (
               <div
@@ -172,26 +172,35 @@ export default function Signup() {
             ))}
           </div>
 
-          {/* Right: CTA */}
+          {/* Right: Form */}
           <div
             ref={formRef}
-            className="flex flex-col items-center gap-3 w-full lg:w-auto lg:flex-1 max-w-[480px]"
+            className="flex flex-col gap-4 w-full lg:w-auto lg:flex-1 max-w-[480px]"
           >
+            <input
+              type="text"
+              placeholder="John Smith"
+              className="h-14 px-6 rounded-full bg-[#0c0c0c] border border-white/[0.1] text-white placeholder:text-white/40 text-[16px] outline-none w-full focus:border-white/25 transition-colors"
+            />
+            <input
+              type="email"
+              placeholder="you@company.com"
+              className="h-14 px-6 rounded-full bg-[#0c0c0c] border border-white/[0.1] text-white placeholder:text-white/40 text-[16px] outline-none w-full focus:border-white/25 transition-colors"
+            />
             <button
               type="button"
-              onClick={() => openFormModal("community")}
-              className="group relative inline-flex items-center justify-center h-16 px-10 rounded-full bg-white text-[#1d2026] text-xl font-semibold w-full overflow-hidden cursor-pointer transition-[transform,box-shadow,filter] duration-300 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-8px_rgba(255,255,255,0.45),0_0_0_1px_rgba(255,255,255,0.08)_inset] active:translate-y-0 active:scale-[0.98]"
+              className="group relative inline-flex items-center justify-center h-16 rounded-full bg-white text-[#1d2026] text-xl font-semibold w-full mt-2 overflow-hidden cursor-pointer transition-[transform,box-shadow,filter] duration-300 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-8px_rgba(255,255,255,0.45),0_0_0_1px_rgba(255,255,255,0.08)_inset] active:translate-y-0 active:scale-[0.98]"
             >
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-y-0 -left-[40%] w-[40%] rotate-12 bg-gradient-to-r from-transparent via-black/10 to-transparent opacity-0 transition-[transform,opacity] duration-700 ease-out group-hover:translate-x-[420%] group-hover:opacity-100"
               />
               <span className="relative inline-flex items-center">
-                Join the community
+                Get early access
               </span>
             </button>
             <p className="text-center text-[14px] text-white/40 font-light mt-1">
-              Takes a minute. No spam, ever.
+              No spam. Unsubscribe anytime.
             </p>
           </div>
         </div>

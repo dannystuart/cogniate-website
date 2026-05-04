@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import UnicornScene from "unicornstudio-react/next";
 import EyebrowBadge from "../components/EyebrowBadge";
 import ButtonPrimary from "../components/ButtonPrimary";
@@ -8,14 +9,26 @@ import NavMenu from "../components/NavMenu";
 import ScrollIndicator from "../components/ScrollIndicator";
 import VideoCard from "../components/VideoCard";
 import MiniShowreelLightbox from "../components/MiniShowreelLightbox";
+import { useFormModal } from "../lib/form-modal/FormModalProvider";
 
 export default function Hero() {
+  const { open: openFormModal } = useFormModal();
+  // Mask the Unicorn Studio embed's hard pop-in by fading the whole hero
+  // (background + content) up from 0 once mounted on the client.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setRevealed(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
-    <section className="relative w-full overflow-hidden bg-bg-primary" style={{ minHeight: "max(100vh, 1000px)" }}>
+    <section id="hero" className="relative w-full overflow-hidden bg-bg-primary" style={{ minHeight: "max(100vh, 1000px)" }}>
       {/* ===== BACKGROUND LAYERS (absolute) ===== */}
 
       {/* Unicorn Studio Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+      <div
+        className={`absolute inset-0 z-0 overflow-hidden transition-opacity duration-[1400ms] ease-out ${revealed ? "opacity-100" : "opacity-0"}`}
+      >
         <div className="absolute inset-0 scale-[1.1] origin-center">
           <UnicornScene
             projectId="ndGLW9kfOIsYe2ysw9Zb"
@@ -84,7 +97,9 @@ export default function Hero() {
       <NavMenu />
 
       {/* ===== CONTENT (auto layout) ===== */}
-      <div className="relative z-10 flex flex-col items-center pt-[220px] lg:pt-[280px] pb-[160px] lg:pb-[240px] px-5 md:px-6 mx-auto max-w-[1330px]">
+      <div
+        className={`relative z-10 flex flex-col items-center pt-[220px] lg:pt-[280px] pb-[160px] lg:pb-[240px] px-5 md:px-6 mx-auto max-w-[1330px] transition-opacity duration-700 ease-out ${revealed ? "opacity-100" : "opacity-0"}`}
+      >
         {/* Eyebrow */}
         <EyebrowBadge>AI POWERED COURSE CREATOR</EyebrowBadge>
 
@@ -106,8 +121,8 @@ export default function Hero() {
           {/* Description */}
           <div className="text-center lg:text-right max-w-[420px] text-text-secondary text-body lg:text-body-lg tracking-[-0.01em]">
             <p className="leading-[1.4] font-light mb-4">
-              Cogniate is the world&apos;s first AI-native enterprise course
-              authoring platform.
+              Cogniate is an AI-native enterprise course{" "}
+              <span className="whitespace-nowrap">co-authoring</span> platform.
             </p>
             <p className="leading-[1.4] font-medium">
               From concept to deployment in
@@ -118,8 +133,18 @@ export default function Hero() {
 
           {/* CTA Group */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-5 items-center sm:items-start w-full sm:w-auto">
-            <ButtonPrimary className="w-full sm:w-auto">Book a Demo</ButtonPrimary>
-            <ButtonSecondary className="w-full sm:w-auto">Join the Community</ButtonSecondary>
+            <ButtonPrimary
+              className="w-full sm:w-auto"
+              onClick={() => openFormModal("book-a-demo")}
+            >
+              Book a Demo
+            </ButtonPrimary>
+            <ButtonSecondary
+              className="w-full sm:w-auto"
+              onClick={() => openFormModal("community")}
+            >
+              Join the Community
+            </ButtonSecondary>
           </div>
         </div>
       </div>

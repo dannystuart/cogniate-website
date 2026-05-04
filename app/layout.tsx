@@ -1,6 +1,17 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ScrollRestorer from "./components/ScrollRestorer";
+import FormModalProvider from "./lib/form-modal/FormModalProvider";
+
+const scrollRestorationScript = `
+try {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if (sessionStorage.getItem('cogniate:scrollY')) {
+    document.documentElement.dataset.restoring = 'true';
+  }
+} catch (e) {}
+`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,8 +37,15 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
     >
-      <body>{children}</body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: scrollRestorationScript }} />
+      </head>
+      <body>
+        <ScrollRestorer />
+        <FormModalProvider>{children}</FormModalProvider>
+      </body>
     </html>
   );
 }
