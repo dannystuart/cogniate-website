@@ -17,6 +17,15 @@ test-results/
 tests/visual/*.png
 !tests/visual/cogniate-story-*.png
 tests/visual/*.svg
+tests/visual/legal/
+tests/visual/nav/
+tests/visual/pricing/
+tests/visual/signup/
+
+# large local-only media (not committed; lyra-scrub frames are the source of truth)
+public/assets/lyra-video-scrub-hr.mp4
+public/assets/lyra-scrub.bak/
+public/assets/promo-video.mov
 
 # local agent config
 .claude/
