@@ -1,5 +1,5 @@
-import Image from "next/image";
 import EyebrowBadge from "../components/EyebrowBadge";
+import InlineSvg from "../components/InlineSvg";
 
 const benefits = [
   {
@@ -112,37 +112,31 @@ export default function Benefits() {
                 ${index < benefits.length - 1 ? "border-b border-white/[0.06] md:border-b-0" : ""}
               `}
             >
-              {/* Icon — plain <img> so SVGs are not rasterized by next/image */}
+              {/* Icon — inline SVG so iOS Safari rasterises filter regions
+                  at display resolution rather than at viewBox size. */}
               <div className="relative w-[60px] h-[60px] shrink-0">
                 {benefit.hasCircleBg ? (
                   <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <InlineSvg
                       src="/assets/benefits-icon-circle.svg"
-                      alt=""
-                      width={60}
-                      height={60}
-                      className="absolute inset-0"
+                      className="absolute inset-0 block w-[60px] h-[60px] [&>svg]:w-full [&>svg]:h-full"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <InlineSvg
                         src={benefit.icon}
-                        alt=""
-                        width={benefit.iconSize}
-                        height={benefit.iconSize}
-                        className="drop-shadow-[0_0_5px_rgba(0,0,0,0.25)]"
+                        className="block drop-shadow-[0_0_5px_rgba(0,0,0,0.25)] [&>svg]:w-full [&>svg]:h-full"
+                        style={{
+                          width: benefit.iconSize,
+                          height: benefit.iconSize,
+                        }}
                       />
                     </div>
                   </>
                 ) : (
                   <div className="relative w-[90px] h-[90px] -m-[15px]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <InlineSvg
                       src={benefit.icon}
-                      alt=""
-                      width={90}
-                      height={90}
+                      className="block w-[90px] h-[90px] [&>svg]:w-full [&>svg]:h-full"
                     />
                   </div>
                 )}
