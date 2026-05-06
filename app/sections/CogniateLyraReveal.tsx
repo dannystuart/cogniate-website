@@ -202,6 +202,8 @@ export default function CogniateLyraReveal() {
     const wrapper = pinWrapperRef.current;
     if (!section || !wrapper) return;
 
+    let removeMobileScroll: (() => void) | null = null;
+
     const ctx = gsap.context(() => {
       // Dev-only test hook: ?lyraProgress=0.85 forces progressRef and skips
       // the pin so Playwright can snapshot resting states deterministically.
@@ -246,30 +248,14 @@ export default function CogniateLyraReveal() {
         return;
       }
 
-      ScrollTrigger.create({
-        trigger: wrapper,
-        start: "top top",
-        end: TIMING.PIN_DISTANCE,
-        pin: true,
-        scrub: 1,
-        // On mobile, force transform-based pinning. The default `position:
-        // fixed` pin reflows when iOS/Android collapse the URL bar — visible
-        // as a ~100px jump at pin engage and again at release. `transform`
-        // keeps the wrapper in document flow and translates it instead, so
-        // the URL-bar transition can't shift the pin's reference frame.
-        pinType: isMobile ? "transform" : "fixed",
-        onUpdate: (self) => {
-          progressRef.current = self.progress;
-        },
-      });
-
-      // Mobile-only canvas crossfade-in. Desktop uses Story's --story-fadeout
-      // (only updates while Story's pinned scrub is active — desktop-only).
-      // On mobile Story isn't pinned, so we run a deliberate 600ms tween on
-      // the canvas opacity once the section enters the viewport. Decoupling
-      // from scroll position (rather than a scrubbed ramp) means a fast swipe
-      // still shows the fade — the previous scrubbed approach completed
-      // imperceptibly fast on momentum scrolls.
+      // Mobile path: native CSS `position: sticky` handles the pin (via Tailwind
+      // classes on the wrapper + an explicit section height in the JSX). GSAP's
+      // transform-based pin tracks every iOS scroll micro-update, so URL-bar
+      // collapse and momentum scroll translate as visible judder. Native sticky
+      // is browser-composited and inherits iOS's scroll smoothing — no transform
+      // updates from JS, no judder. We just drive `progressRef` from the section's
+      // bounding rect, then the existing rAF loop maps it to canvas frames + CSS
+      // reveal vars exactly as before.
       if (isMobile) {
         ScrollTrigger.create({
           trigger: section,
@@ -283,10 +269,52 @@ export default function CogniateLyraReveal() {
             });
           },
         });
+
+        const updateProgress = () => {
+          const rect = section.getBoundingClientRect();
+          // Scrub range = total scroll distance the sticky wrapper stays stuck.
+          // Section height is `100dvh + pin distance`, so subtracting one viewport
+          // gives the pin distance in pixels.
+          const scrubRange = section.offsetHeight - window.innerHeight;
+          if (scrubRange <= 0) return;
+          const scrolled = -rect.top;
+          progressRef.current = Math.max(0, Math.min(1, scrolled / scrubRange));
+        };
+
+        let ticking = false;
+        const onScroll = () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            updateProgress();
+            ticking = false;
+          });
+        };
+
+        updateProgress();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        removeMobileScroll = () => window.removeEventListener("scroll", onScroll);
+        return; // skip the desktop GSAP pin trigger
       }
+
+      // Desktop path: GSAP pin works smoothly on desktop where there's no URL-bar
+      // chrome to interact with the pin's reference frame.
+      ScrollTrigger.create({
+        trigger: wrapper,
+        start: "top top",
+        end: TIMING.PIN_DISTANCE,
+        pin: true,
+        scrub: 1,
+        onUpdate: (self) => {
+          progressRef.current = self.progress;
+        },
+      });
     }, section);
 
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+      removeMobileScroll?.();
+    };
   }, []);
 
   // rAF loop — reads progressRef each frame, redraws the canvas (only when the
@@ -388,9 +416,12 @@ export default function CogniateLyraReveal() {
     <section
       ref={sectionRef}
       data-testid="cogniate-lyra-reveal"
-      className="relative w-full bg-bg-secondary overflow-hidden"
+      className="relative w-full bg-bg-secondary overflow-x-clip min-h-[320dvh] lg:min-h-0 lg:overflow-hidden"
     >
-      <div ref={pinWrapperRef} className="relative w-full min-h-[85vh] lg:min-h-screen">
+      <div
+        ref={pinWrapperRef}
+        className="sticky top-0 w-full h-[100dvh] lg:relative lg:top-auto lg:h-auto lg:min-h-screen"
+      >
         {/* Dust-puff still — sits at z-bottom, fades in once the wordmark has
             resolved so the foreground stack reads against a textured backdrop
             instead of flat dark. Edges feathered via a radial mask so the
@@ -448,7 +479,7 @@ export default function CogniateLyraReveal() {
           aria-hidden
           className="lyra-halo pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
           style={{
-            top: `${LYRA_TOP_VH}vh`,
+            top: `${LYRA_TOP_VH}dvh`,
             width: "clamp(420px, 45vw, 600px)",
             height: "clamp(180px, 18vw, 280px)",
             background:
@@ -465,7 +496,7 @@ export default function CogniateLyraReveal() {
             the halo + tagline pattern). */}
         <div
           className="absolute left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2"
-          style={{ top: `${LYRA_TOP_VH}vh` }}
+          style={{ top: `${LYRA_TOP_VH}dvh` }}
         >
           <img
             className="lyra-wordmark block"
@@ -488,7 +519,7 @@ export default function CogniateLyraReveal() {
             push other elements; centred horizontally. */}
         <div
           className="pointer-events-none absolute inset-x-0 z-[2] flex flex-col items-center"
-          style={{ top: `${LOWER_TEXT_TOP_VH}vh` }}
+          style={{ top: `${LOWER_TEXT_TOP_VH}dvh` }}
         >
           <p
             className="lyra-tagline text-center"
