@@ -118,9 +118,9 @@ export default function Footer() {
           </div>
 
           {/* Footer columns */}
-          <div className="flex flex-col md:flex-row flex-wrap items-center md:items-start justify-center gap-10 md:gap-12 lg:gap-[96px] w-full">
+          <div className="flex flex-col lg:flex-row flex-wrap items-center lg:items-start justify-center gap-10 md:gap-12 lg:gap-[96px] w-full">
             {/* Brand column */}
-            <div className="flex flex-col items-center md:items-start gap-0 w-[278px]">
+            <div className="flex flex-col items-center lg:items-start gap-0 w-[278px] order-last lg:order-first">
               <Image
                 src="/assets/cogniate-icon-footer.png"
                 alt="Cogniate"
@@ -137,7 +137,7 @@ export default function Footer() {
             </div>
 
             {/* Nav column */}
-            <div className="flex flex-col items-center md:items-start gap-[6px]">
+            <div className="flex flex-col items-center lg:items-start gap-[6px]">
               {navLinks.map((link) => (
                 <a
                   key={link.label}
@@ -150,7 +150,7 @@ export default function Footer() {
             </div>
 
             {/* Legal column */}
-            <div className="flex flex-col items-center md:items-start gap-[6px]">
+            <div className="flex flex-col items-center lg:items-start gap-[6px]">
               <span className="text-body text-white leading-[30px] font-normal">
                 Community
               </span>
@@ -166,7 +166,7 @@ export default function Footer() {
             </div>
 
             {/* Social column */}
-            <div className="flex flex-col items-center md:items-start md:self-center gap-3">
+            <div className="flex flex-row lg:flex-col items-center lg:items-start lg:self-center gap-4 lg:gap-3">
               {socialLinks.map((social) => (
                 <a
                   key={social.label}

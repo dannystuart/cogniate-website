@@ -126,20 +126,17 @@ export default function CogniateLyraReveal() {
   const lastDrawnIdxRef = useRef(-1);
   const progressRef = useRef(0);
 
-  // Preload the frame sequence on mount. On mobile / reduced-motion we only
-  // need the final frame (static destination image), so we skip the bulk
-  // download. On desktop we eagerly fetch all 151 frames so the scrub never
-  // catches an undecoded frame mid-scroll.
+  // Preload the frame sequence on mount. Reduced-motion only needs the final
+  // frame (static destination image). Otherwise — including mobile — we eagerly
+  // fetch all 151 frames so the scrub never catches an undecoded frame
+  // mid-scroll.
   useEffect(() => {
-    const isDesktop =
-      typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
     const reduced =
       typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const fullPreload = isDesktop && !reduced;
 
-    const indices = fullPreload
-      ? Array.from({ length: FRAME_COUNT }, (_, i) => i)
-      : [FRAME_COUNT - 1];
+    const indices = reduced
+      ? [FRAME_COUNT - 1]
+      : Array.from({ length: FRAME_COUNT }, (_, i) => i);
 
     const frames = framesRef.current;
     for (const i of indices) {
@@ -225,12 +222,11 @@ export default function CogniateLyraReveal() {
         }
       }
 
-      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      // Mobile or reduced motion → no pin, no scrub. Paints the final frame
-      // statically and runs the text-stagger GSAP timeline.
-      if (!isDesktop || reduced) {
+      // Reduced motion → no pin, no scrub. Paints the final frame statically
+      // and runs the text-stagger GSAP timeline.
+      if (reduced) {
         const paintFinalFrame = () => {
           const finalImg = framesRef.current[FRAME_COUNT - 1];
           if (finalImg && finalImg.naturalWidth) {
@@ -253,6 +249,31 @@ export default function CogniateLyraReveal() {
           progressRef.current = self.progress;
         },
       });
+
+      // Mobile-only crossfade-in. Desktop drives the canvas fade-in via
+      // CogniateStory's --story-fadeout (which only updates while Story's
+      // pinned scrub is active — desktop-only). On mobile Story isn't pinned,
+      // so without this the canvas stays invisible during the long scroll
+      // between the last Story icon and the Lyra section's pin start. Ramp
+      // --lyra-fadein from 0 → 1 as the section approaches: starts when the
+      // section top is half a viewport below the fold (≈ when the bottom
+      // Story icon crosses 50% of viewport), ends when the section top hits
+      // the top of the viewport (= the moment the pin engages).
+      const isMobile = !window.matchMedia("(min-width: 1024px)").matches;
+      if (isMobile) {
+        ScrollTrigger.create({
+          trigger: section,
+          start: "top bottom",
+          end: "top top",
+          scrub: true,
+          onUpdate: (self) => {
+            document.documentElement.style.setProperty(
+              "--lyra-fadein",
+              String(self.progress)
+            );
+          },
+        });
+      }
     }, section);
 
     return () => ctx.revert();
@@ -270,9 +291,8 @@ export default function CogniateLyraReveal() {
       process.env.NODE_ENV !== "production" &&
       new URL(window.location.href).searchParams.has("lyraProgress");
     if (!isTestMode) {
-      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (!isDesktop || reduced) return;
+      if (reduced) return;
     }
 
     let rafId = 0;
@@ -328,7 +348,16 @@ export default function CogniateLyraReveal() {
         // values when both contribute (e.g. test-mode edge cases).
         const storyFadeoutStr = root.style.getPropertyValue("--story-fadeout");
         const storyFadeout = storyFadeoutStr ? parseFloat(storyFadeoutStr) : 1;
-        const crossfadeIn = 1 - (Number.isFinite(storyFadeout) ? storyFadeout : 1);
+        const storyCrossfade = 1 - (Number.isFinite(storyFadeout) ? storyFadeout : 1);
+        // Mobile-only fade-in driven by the section-approach ScrollTrigger
+        // above. On desktop --lyra-fadein is never written, so this term is 0
+        // and Story's fadeout remains the sole driver.
+        const lyraFadeinStr = root.style.getPropertyValue("--lyra-fadein");
+        const lyraFadein = lyraFadeinStr ? parseFloat(lyraFadeinStr) : 0;
+        const crossfadeIn = Math.max(
+          storyCrossfade,
+          Number.isFinite(lyraFadein) ? lyraFadein : 0
+        );
         const videoFadeOut = ramp(p, TIMING.VIDEO_FADE_OUT[0], TIMING.VIDEO_FADE_OUT[1], 0, 1);
         wrapper.style.setProperty(
           "--video-opacity",
@@ -351,7 +380,7 @@ export default function CogniateLyraReveal() {
       data-testid="cogniate-lyra-reveal"
       className="relative w-full bg-bg-secondary overflow-hidden"
     >
-      <div ref={pinWrapperRef} className="relative min-h-screen w-full">
+      <div ref={pinWrapperRef} className="relative w-full min-h-[85vh] lg:min-h-screen">
         {/* Dust-puff still — sits at z-bottom, fades in once the wordmark has
             resolved so the foreground stack reads against a textured backdrop
             instead of flat dark. Edges feathered via a radial mask so the
@@ -397,8 +426,8 @@ export default function CogniateLyraReveal() {
           ref={canvasRef}
           width={FRAME_W}
           height={FRAME_H}
-          className="lyra-canvas absolute inset-0 size-full"
-          style={{ objectFit: "cover", opacity: "var(--video-opacity, 0)" }}
+          className="lyra-canvas absolute inset-0 size-full object-cover"
+          style={{ opacity: "var(--video-opacity, 0)" }}
         />
 
         {/* Halo — soft dark blurred ellipse behind the wordmark. Subtle on
@@ -483,8 +512,8 @@ export default function CogniateLyraReveal() {
           >
             <span
               data-word="create"
+              className="block md:inline-block mb-3 md:mb-0"
               style={{
-                display: "inline-block",
                 opacity: "var(--w-create-opacity, 0)",
                 transform: "translateY(var(--w-create-y, 16px))",
                 filter: "blur(var(--w-create-blur, 2px))",
@@ -494,8 +523,8 @@ export default function CogniateLyraReveal() {
             </span>
             <span
               data-word="design"
+              className="block md:inline-block mb-3 md:mb-0"
               style={{
-                display: "inline-block",
                 opacity: "var(--w-design-opacity, 0)",
                 transform: "translateY(var(--w-design-y, 16px))",
                 filter: "blur(var(--w-design-blur, 2px))",
@@ -505,14 +534,14 @@ export default function CogniateLyraReveal() {
             </span>
             <span
               data-word="publish"
+              className="block md:inline-block"
               style={{
-                display: "inline-block",
                 opacity: "var(--w-publish-opacity, 0)",
                 transform: "translateY(var(--w-publish-y, 16px))",
                 filter: "blur(var(--w-publish-blur, 2px))",
               }}
             >
-              Publish
+              Publish.
             </span>
           </h3>
         </div>

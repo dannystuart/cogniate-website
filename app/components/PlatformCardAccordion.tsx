@@ -247,6 +247,20 @@ function initExpandingFeaturePills(wrap: HTMLElement) {
     btn.addEventListener("click", () => switchTo(i));
   });
 
+  // Open the first pill by default. Defer until after layout so measureInnerH
+  // gets accurate dimensions (fonts/images settled), then switch instantly.
+  if (items[0]) {
+    requestAnimationFrame(() => {
+      const expandedW = getExpandedWidth();
+      const { openH } = getHeights(items[0], expandedW);
+      items[0].setAttribute("data-active", "true");
+      setItemA11y(items[0], true);
+      setWrapActive(true);
+      setVisualActive(0);
+      items[0].style.height = `${openH}px`;
+    });
+  }
+
   // Escape key
   wrap.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeAll();
@@ -413,7 +427,7 @@ export default function PlatformCardAccordion({
         </div>
 
         {/* Right column: visual panel */}
-        <div className="relative z-10 w-full lg:w-1/2 overflow-hidden rounded-[20px] lg:rounded-l-none min-h-[300px] lg:min-h-[600px]">
+        <div className="relative z-10 w-full lg:w-1/2 overflow-hidden rounded-[20px] lg:rounded-l-none min-h-[300px] md:min-h-[480px] lg:min-h-[600px]">
           {/* Visual background */}
           <div className="absolute inset-0 bg-[#17161b]" />
 
@@ -432,7 +446,7 @@ export default function PlatformCardAccordion({
           />
 
           {/* Visual items (one per pill, cross-fade) */}
-          <div className="relative w-full h-full overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden">
             {card.visuals.map((src, i) => (
               <div
                 key={i}

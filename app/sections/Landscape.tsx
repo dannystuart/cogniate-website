@@ -289,7 +289,7 @@ export default function Landscape() {
     <section
       ref={sectionRef}
       data-testid="landscape-section"
-      className="relative w-full bg-bg-secondary overflow-hidden pb-40"
+      className="relative w-full bg-bg-secondary overflow-hidden pb-[121px] lg:pb-40"
     >
       <div className="relative mx-auto max-w-[1330px] px-5 md:px-6 pt-[80px] lg:pt-[100px]">
         {/* Heading */}
@@ -301,11 +301,11 @@ export default function Landscape() {
         </h2>
 
         {/* Stats container - uses absolute positioning on desktop for diagonal stagger */}
-        <div className="relative mt-[48px] sm:mt-[60px] lg:mt-[120px] flex flex-col gap-10 sm:gap-12 lg:block lg:min-h-[750px]">
+        <div className="relative mt-[48px] sm:mt-[60px] lg:mt-[120px] flex flex-col gap-16 sm:gap-12 lg:block lg:min-h-[750px]">
           {/* Left stat - The Landscape */}
           <div
             ref={landscapeBlockRef}
-            className="flex gap-4 sm:gap-[29px] items-start lg:absolute lg:left-[11%] lg:top-0"
+            className="flex gap-4 sm:gap-[29px] items-center lg:items-start justify-center lg:justify-start lg:absolute lg:left-[11%] lg:top-0"
           >
             {/* Vertical accent line — grows up from bottom */}
             <div
@@ -317,19 +317,19 @@ export default function Landscape() {
               }}
             />
 
-            <div className="flex flex-col gap-4 sm:gap-[23px] items-start">
+            <div className="flex flex-col gap-4 sm:gap-[23px] items-center lg:items-start text-center lg:text-left">
               <div ref={landscapeEyebrowRef} className="inline-flex">
                 <EyebrowBadge>THE LANDSCAPE</EyebrowBadge>
               </div>
 
-              <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex flex-col gap-3 sm:gap-4 items-center lg:items-start">
                 {/* Main stat */}
                 <div
                   ref={landscapeNumberWrapRef}
                   className="flex items-end leading-[1.1]"
                 >
                   <span
-                    className="text-[48px] sm:text-[64px] lg:text-[96px] font-extralight tracking-[-0.04em] tabular-nums"
+                    className="text-[72px] sm:text-[64px] lg:text-[96px] font-extralight tracking-[-0.04em] tabular-nums"
                     style={{
                       background:
                         "linear-gradient(161deg, rgb(255, 255, 255) 3%, rgb(146, 100, 205) 98%)",
@@ -340,13 +340,13 @@ export default function Landscape() {
                   >
                     $<span ref={landscapeNumberRef}>0</span>{" "}
                   </span>
-                  <span className="text-[20px] sm:text-[24px] lg:text-[32px] font-medium text-white tracking-[-0.04em] pb-1 sm:pb-2 lg:pb-3">
+                  <span className="text-[24px] sm:text-[24px] lg:text-[32px] font-medium text-white tracking-[-0.04em] pb-2 sm:pb-2 lg:pb-3">
                     billion*
                   </span>
                 </div>
 
                 {/* Subtitle */}
-                <div className="flex flex-col">
+                <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
                   <p
                     ref={landscapeSubtitleRef}
                     className="text-body sm:text-body-lg font-light leading-[1.3] text-text-muted tracking-[-0.01em] mb-[5px]"
@@ -367,24 +367,24 @@ export default function Landscape() {
           {/* Right stat - The Opportunity */}
           <div
             ref={opportunityBlockRef}
-            className="flex gap-4 sm:gap-[29px] items-start justify-end lg:absolute lg:right-[10%] lg:top-[165px]"
+            className="flex gap-4 sm:gap-[29px] items-center lg:items-start justify-center lg:justify-end lg:absolute lg:right-[10%] lg:top-[165px]"
           >
-            <div className="flex flex-col gap-4 sm:gap-[23px] items-end max-w-[360px]">
+            <div className="flex flex-col gap-4 sm:gap-[23px] items-center lg:items-end max-w-[360px] text-center lg:text-right">
               <div ref={opportunityEyebrowRef} className="inline-flex">
                 <EyebrowBadge>THE OPPORTUNITY</EyebrowBadge>
               </div>
 
-              <div className="flex flex-col gap-3 sm:gap-4 items-end text-right">
+              <div className="flex flex-col gap-3 sm:gap-4 items-center lg:items-end text-center lg:text-right">
                 {/* Main stat */}
                 <div
                   ref={opportunityNumberWrapRef}
                   className="flex items-end leading-[1.1]"
                 >
-                  <span className="text-[20px] sm:text-[24px] lg:text-[32px] font-medium text-white tracking-[-0.04em] pb-1 sm:pb-2 lg:pb-3">
+                  <span className="text-[24px] sm:text-[24px] lg:text-[32px] font-medium text-white tracking-[-0.04em] pb-2 sm:pb-2 lg:pb-3">
                     only
                   </span>
                   <span
-                    className="text-[48px] sm:text-[64px] lg:text-[96px] font-extralight tracking-[-0.04em] tabular-nums"
+                    className="text-[72px] sm:text-[64px] lg:text-[96px] font-extralight tracking-[-0.04em] tabular-nums"
                     style={{
                       background:
                         "linear-gradient(157deg, rgb(255, 255, 255) 3%, rgb(146, 100, 205) 98%)",
@@ -435,12 +435,12 @@ export default function Landscape() {
               container sizes to whichever state is wider. */}
           <div
             ref={bottomRowRef}
-            className="relative grid lg:absolute lg:left-[24%] lg:top-[584px]"
+            className="relative z-10 grid mt-4 sm:mt-0 lg:mt-0 lg:absolute lg:left-[24%] lg:top-[584px]"
           >
             {/* Old state — Traditional course creation / 154 hours */}
             <div
               ref={oldStateRef}
-              className="col-start-1 row-start-1 flex flex-col sm:flex-row gap-3 sm:gap-[27px] items-center sm:items-center justify-center lg:justify-start"
+              className="col-start-1 row-start-1 flex flex-col-reverse sm:flex-row gap-3 sm:gap-[27px] items-center sm:items-center justify-center lg:justify-start"
             >
               <p
                 ref={oldLabelRef}
@@ -450,7 +450,7 @@ export default function Landscape() {
               </p>
               <span
                 ref={oldNumberRef}
-                className="text-[56px] sm:text-[80px] lg:text-[128px] font-extralight leading-[1.1] tracking-[-0.06em] tabular-nums whitespace-nowrap"
+                className="text-[clamp(56px,17vw,72px)] sm:text-[80px] lg:text-[128px] font-extralight leading-[1.1] tracking-[-0.06em] tabular-nums whitespace-nowrap"
                 style={{
                   background:
                     "linear-gradient(170deg, rgb(255, 255, 255) 3%, rgb(146, 100, 205) 98%)",
@@ -470,7 +470,7 @@ export default function Landscape() {
             >
               <span
                 ref={newNumberRef}
-                className="text-[56px] sm:text-[80px] lg:text-[128px] font-extralight leading-[1.1] tracking-[-0.06em] whitespace-nowrap"
+                className="text-[clamp(56px,17vw,72px)] sm:text-[80px] lg:text-[128px] font-extralight leading-[1.1] tracking-[-0.06em] whitespace-nowrap"
                 style={{
                   background:
                     "linear-gradient(170deg, rgb(255, 255, 255) 3%, rgb(146, 100, 205) 98%)",

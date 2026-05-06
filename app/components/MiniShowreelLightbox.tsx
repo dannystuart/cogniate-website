@@ -110,6 +110,11 @@ export default function MiniShowreelLightbox() {
       const video = wrap.querySelector("video");
       if (!video) return;
       try {
+        video.muted = false;
+      } catch {
+        /* no-op */
+      }
+      try {
         void video.play();
       } catch {
         /* no-op */
@@ -123,6 +128,11 @@ export default function MiniShowreelLightbox() {
       if (!video) return;
       try {
         video.pause();
+      } catch {
+        /* no-op */
+      }
+      try {
+        video.muted = true;
       } catch {
         /* no-op */
       }
