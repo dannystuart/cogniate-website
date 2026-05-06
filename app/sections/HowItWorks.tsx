@@ -146,7 +146,6 @@ export default function HowItWorks() {
 
   return (
     <section
-      id="how-it-works"
       ref={sectionRef}
       data-testid="how-it-works-section"
       className="relative w-full bg-[#111112] overflow-hidden lg:pt-0 lg:pb-[220px] lg:-mt-[30vh]"
@@ -309,7 +308,15 @@ export default function HowItWorks() {
       </div>
 
       {/* ===== CONTENT ===== */}
-      <div className="relative z-10 mx-auto max-w-[1280px] px-5 md:px-6 lg:pt-[263px]">
+      {/* Spacer reserves the visual gap above the eyebrow on lg+. The
+          scroll-anchor `id` lives on the content wrapper below so anchor
+          links land at the visible eyebrow, not the section's box top
+          (which sits 30vh higher due to the `-mt-[30vh]` overlap). */}
+      <div aria-hidden className="hidden lg:block h-[263px]" />
+      <div
+        id="how-it-works"
+        className="relative z-10 mx-auto max-w-[1280px] px-5 md:px-6 scroll-mt-6"
+      >
         {/* HOW IT WORKS eyebrow — tucked right underneath the top horizontal line */}
         <div
           className="flex mx-auto lg:mx-0 lg:inline-flex items-center justify-center h-[44px] w-[200px] lg:h-[52px] lg:w-[261px] mb-8 lg:mb-16"

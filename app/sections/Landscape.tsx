@@ -50,6 +50,7 @@ export default function Landscape() {
       const prefersReducedMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
       ).matches;
+      const isMobile = window.matchMedia("(max-width: 1023px)").matches;
 
       // Set initial states (lines collapsed, numbers at 0, text hidden)
       gsap.set(landscapeLineRef.current, {
@@ -129,44 +130,82 @@ export default function Landscape() {
           once: true,
         },
       });
-      landscapeTl
-        .set(landscapeNumberWrapRef.current, { opacity: 1 }, 0)
-        .to(
-          landscapeLineRef.current,
-          { scaleY: 1, duration: 1.0, ease: "power2.out" },
-          0
-        )
-        .to(
-          landscapeCounter,
-          {
-            val: 401,
-            duration: 1.0,
-            ease: "power2.out",
-            onUpdate: () => {
-              if (landscapeNumberRef.current) {
-                landscapeNumberRef.current.textContent = String(
-                  Math.round(landscapeCounter.val)
-                );
-              }
-            },
-          },
-          0
-        )
-        .to(
-          [
+      if (isMobile) {
+        // Mobile: eyebrow → number → subtitle/footnote (sequential)
+        landscapeTl
+          .to(
             landscapeEyebrowRef.current,
-            landscapeSubtitleRef.current,
-            landscapeFootnoteRef.current,
-          ],
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.5,
-            ease: "power2.out",
-            stagger: 0.08,
-          },
-          1.0
-        );
+            { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+            0
+          )
+          .set(landscapeNumberWrapRef.current, { opacity: 1 }, 0.45)
+          .to(
+            landscapeCounter,
+            {
+              val: 401,
+              duration: 1.0,
+              ease: "power2.out",
+              onUpdate: () => {
+                if (landscapeNumberRef.current) {
+                  landscapeNumberRef.current.textContent = String(
+                    Math.round(landscapeCounter.val)
+                  );
+                }
+              },
+            },
+            0.45
+          )
+          .to(
+            [landscapeSubtitleRef.current, landscapeFootnoteRef.current],
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.5,
+              ease: "power2.out",
+              stagger: 0.08,
+            },
+            1.5
+          );
+      } else {
+        landscapeTl
+          .set(landscapeNumberWrapRef.current, { opacity: 1 }, 0)
+          .to(
+            landscapeLineRef.current,
+            { scaleY: 1, duration: 1.0, ease: "power2.out" },
+            0
+          )
+          .to(
+            landscapeCounter,
+            {
+              val: 401,
+              duration: 1.0,
+              ease: "power2.out",
+              onUpdate: () => {
+                if (landscapeNumberRef.current) {
+                  landscapeNumberRef.current.textContent = String(
+                    Math.round(landscapeCounter.val)
+                  );
+                }
+              },
+            },
+            0
+          )
+          .to(
+            [
+              landscapeEyebrowRef.current,
+              landscapeSubtitleRef.current,
+              landscapeFootnoteRef.current,
+            ],
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.5,
+              ease: "power2.out",
+              stagger: 0.08,
+            },
+            1.0
+          );
+      }
 
       // 3) Opportunity block
       const opportunityCounter = { val: 0 };
@@ -177,45 +216,88 @@ export default function Landscape() {
           once: true,
         },
       });
-      opportunityTl
-        .set(opportunityNumberWrapRef.current, { opacity: 1 }, 0)
-        .to(
-          opportunitySolidRef.current,
-          { scaleY: 1, duration: 0.7, ease: "power2.out" },
-          0
-        )
-        .to(
-          opportunityCounter,
-          {
-            val: 12,
-            duration: 0.7,
-            ease: "power2.out",
-            onUpdate: () => {
-              if (opportunityNumberRef.current) {
-                opportunityNumberRef.current.textContent = String(
-                  Math.round(opportunityCounter.val)
-                );
-              }
+      if (isMobile) {
+        // Mobile: eyebrow → number → subtitle (sequential).
+        // Lines are hidden on mobile, but still animate for consistency.
+        opportunityTl
+          .to(
+            opportunityEyebrowRef.current,
+            { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+            0
+          )
+          .set(opportunityNumberWrapRef.current, { opacity: 1 }, 0.45)
+          .to(
+            opportunitySolidRef.current,
+            { scaleY: 1, duration: 0.7, ease: "power2.out" },
+            0.45
+          )
+          .to(
+            opportunityCounter,
+            {
+              val: 12,
+              duration: 0.7,
+              ease: "power2.out",
+              onUpdate: () => {
+                if (opportunityNumberRef.current) {
+                  opportunityNumberRef.current.textContent = String(
+                    Math.round(opportunityCounter.val)
+                  );
+                }
+              },
             },
-          },
-          0
-        )
-        .to(
-          opportunityDimRef.current,
-          { scaleY: 1, duration: 0.4, ease: "power2.out" },
-          0.7
-        )
-        .to(
-          [opportunityEyebrowRef.current, opportunitySubtitleRef.current],
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.5,
-            ease: "power2.out",
-            stagger: 0.08,
-          },
-          1.1
-        );
+            0.45
+          )
+          .to(
+            opportunityDimRef.current,
+            { scaleY: 1, duration: 0.4, ease: "power2.out" },
+            1.15
+          )
+          .to(
+            opportunitySubtitleRef.current,
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+            1.25
+          );
+      } else {
+        opportunityTl
+          .set(opportunityNumberWrapRef.current, { opacity: 1 }, 0)
+          .to(
+            opportunitySolidRef.current,
+            { scaleY: 1, duration: 0.7, ease: "power2.out" },
+            0
+          )
+          .to(
+            opportunityCounter,
+            {
+              val: 12,
+              duration: 0.7,
+              ease: "power2.out",
+              onUpdate: () => {
+                if (opportunityNumberRef.current) {
+                  opportunityNumberRef.current.textContent = String(
+                    Math.round(opportunityCounter.val)
+                  );
+                }
+              },
+            },
+            0
+          )
+          .to(
+            opportunityDimRef.current,
+            { scaleY: 1, duration: 0.4, ease: "power2.out" },
+            0.7
+          )
+          .to(
+            [opportunityEyebrowRef.current, opportunitySubtitleRef.current],
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.5,
+              ease: "power2.out",
+              stagger: 0.08,
+            },
+            1.1
+          );
+      }
 
       // 4) Bottom row — 154 count + swap to "60 minutes"
       const counter154 = { val: 0 };

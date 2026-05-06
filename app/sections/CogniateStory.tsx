@@ -540,7 +540,7 @@ export default function CogniateStory() {
       {/* end desktop wrapper */}
 
       {/* === MOBILE LAYOUT — duplicate heading + accordion === */}
-      <div className="relative mx-auto max-w-[1330px] px-5 md:px-6 lg:hidden">
+      <div className="relative mx-auto max-w-[1330px] p-14 md:px-6 md:py-0 lg:hidden">
         <h2 className="story-heading landscape-heading-gradient text-center text-h2-mobile sm:text-h2-tablet font-[var(--font-weight-h2)] leading-[var(--leading-h2)] tracking-[var(--tracking-h2)]">
           Learning is a journey.
           <br />
