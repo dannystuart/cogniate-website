@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useId, useMemo, useState } from "react";
+import { scopeSvgIds } from "../lib/scopeSvgIds";
+
 interface StoryIconProps {
   src: string;
   alt: string;
@@ -23,9 +26,27 @@ export default function StoryIcon({
   onMouseLeave,
   onClick,
 }: StoryIconProps) {
-  const glowFilter = glowColor
-    ? `drop-shadow(0 0 24px ${glowColor})`
-    : "none";
+  const [markup, setMarkup] = useState<string | null>(null);
+  const reactId = useId();
+  const idPrefix = useMemo(
+    () => `si${reactId.replace(/[^a-zA-Z0-9]/g, "")}_`,
+    [reactId]
+  );
+
+  useEffect(() => {
+    let active = true;
+    fetch(src)
+      .then((r) => r.text())
+      .then((t) => {
+        if (active) setMarkup(scopeSvgIds(t, idPrefix));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [src, idPrefix]);
+
+  const glowFilter = glowColor ? `drop-shadow(0 0 24px ${glowColor})` : "none";
 
   return (
     <button
@@ -42,13 +63,21 @@ export default function StoryIcon({
       aria-expanded={isActive}
       aria-label={`${alt} story`}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={alt}
-        className="absolute inset-0 size-full"
-        draggable={false}
-      />
+      {markup ? (
+        <span
+          className="absolute inset-0 [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full"
+          aria-hidden
+          dangerouslySetInnerHTML={{ __html: markup }}
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={alt}
+          className="absolute inset-0 size-full"
+          draggable={false}
+        />
+      )}
     </button>
   );
 }

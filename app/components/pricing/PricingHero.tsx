@@ -12,7 +12,7 @@ export default function PricingHero() {
       />
 
       <div className="relative flex flex-col items-center gap-5 md:gap-7 px-5 md:px-8 max-w-[1280px] mx-auto text-center">
-        <h1 className="heading-gradient whitespace-nowrap text-[28px] sm:text-[40px] md:text-[56px] lg:text-[68px] font-[var(--font-weight-h1)] leading-[var(--leading-h1)] tracking-[var(--tracking-h1)]">
+        <h1 className="heading-gradient text-balance xl:whitespace-nowrap text-[28px] sm:text-[40px] md:text-[56px] lg:text-[68px] font-[var(--font-weight-h1)] leading-[var(--leading-h1)] tracking-[var(--tracking-h1)]">
           A plan for every stage of making.
         </h1>
         <p className="text-body md:text-body-lg text-white/70 font-light max-w-[620px] leading-[1.4] tracking-[-0.2px]">

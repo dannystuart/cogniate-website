@@ -52,7 +52,7 @@ export default function AuthoringSection() {
   return (
     <section
       aria-label="Authoring plans"
-      className="relative pt-8 md:pt-10 lg:pt-12 pb-20 md:pb-24 lg:pb-28"
+      className="relative pt-8 md:pt-10 lg:pt-12 pb-20 md:pb-24 lg:pb-28 overflow-hidden"
     >
       {/* Decorative gradient blob */}
       <div
