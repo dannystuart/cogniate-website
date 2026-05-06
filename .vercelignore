@@ -1,0 +1,15 @@
+.git
+node_modules
+.next
+out
+playwright-report
+test-results
+tests
+.worktrees
+.claude
+docs/plans
+
+# large local-only media (not committed; lyra-scrub frames are the source of truth)
+public/assets/lyra-video-scrub-hr.mp4
+public/assets/lyra-scrub.bak
+public/assets/promo-video.mov

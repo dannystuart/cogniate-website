@@ -126,17 +126,19 @@ export default function CogniateLyraReveal() {
   const lastDrawnIdxRef = useRef(-1);
   const progressRef = useRef(0);
 
-  // Preload the frame sequence on mount. Reduced-motion only needs the final
-  // frame (static destination image). Otherwise — including mobile — we eagerly
-  // fetch all 151 frames so the scrub never catches an undecoded frame
-  // mid-scroll.
+  // Preload the frame sequence on mount. Only desktop (non-reduced-motion)
+  // runs the pinned scrub and needs all 151 frames decoded ahead of time.
+  // Mobile + reduced-motion paint the final formed-Lyra frame as a static
+  // destination image, so they fetch a single ~50KB asset instead of ~7MB.
   useEffect(() => {
-    const reduced =
-      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof window === "undefined") return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    const fullPreload = isDesktop && !reduced;
 
-    const indices = reduced
-      ? [FRAME_COUNT - 1]
-      : Array.from({ length: FRAME_COUNT }, (_, i) => i);
+    const indices = fullPreload
+      ? Array.from({ length: FRAME_COUNT }, (_, i) => i)
+      : [FRAME_COUNT - 1];
 
     const frames = framesRef.current;
     for (const i of indices) {
@@ -223,10 +225,15 @@ export default function CogniateLyraReveal() {
       }
 
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
 
-      // Reduced motion → no pin, no scrub. Paints the final frame statically
-      // and runs the text-stagger GSAP timeline.
-      if (reduced) {
+      // Mobile + reduced-motion → no pin, no scrub. Pinned scroll-scrubs are a
+      // desktop affordance (see docs/scroll-scrub-frame-sequence.md) — on
+      // mobile the pin-spacer + URL-bar collapse interplay produces visible
+      // jumps at engage/release, and the 7MB frame preload is unfriendly on
+      // cellular. Both paths paint the final formed-Lyra frame statically and
+      // run the text-stagger GSAP timeline at "top 70%".
+      if (!isDesktop || reduced) {
         const paintFinalFrame = () => {
           const finalImg = framesRef.current[FRAME_COUNT - 1];
           if (finalImg && finalImg.naturalWidth) {
@@ -249,31 +256,6 @@ export default function CogniateLyraReveal() {
           progressRef.current = self.progress;
         },
       });
-
-      // Mobile-only crossfade-in. Desktop drives the canvas fade-in via
-      // CogniateStory's --story-fadeout (which only updates while Story's
-      // pinned scrub is active — desktop-only). On mobile Story isn't pinned,
-      // so without this the canvas stays invisible during the long scroll
-      // between the last Story icon and the Lyra section's pin start. Ramp
-      // --lyra-fadein from 0 → 1 as the section approaches: starts when the
-      // section top is half a viewport below the fold (≈ when the bottom
-      // Story icon crosses 50% of viewport), ends when the section top hits
-      // the top of the viewport (= the moment the pin engages).
-      const isMobile = !window.matchMedia("(min-width: 1024px)").matches;
-      if (isMobile) {
-        ScrollTrigger.create({
-          trigger: section,
-          start: "top bottom",
-          end: "top top",
-          scrub: true,
-          onUpdate: (self) => {
-            document.documentElement.style.setProperty(
-              "--lyra-fadein",
-              String(self.progress)
-            );
-          },
-        });
-      }
     }, section);
 
     return () => ctx.revert();
@@ -292,7 +274,8 @@ export default function CogniateLyraReveal() {
       new URL(window.location.href).searchParams.has("lyraProgress");
     if (!isTestMode) {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduced) return;
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      if (reduced || !isDesktop) return;
     }
 
     let rafId = 0;
@@ -348,16 +331,7 @@ export default function CogniateLyraReveal() {
         // values when both contribute (e.g. test-mode edge cases).
         const storyFadeoutStr = root.style.getPropertyValue("--story-fadeout");
         const storyFadeout = storyFadeoutStr ? parseFloat(storyFadeoutStr) : 1;
-        const storyCrossfade = 1 - (Number.isFinite(storyFadeout) ? storyFadeout : 1);
-        // Mobile-only fade-in driven by the section-approach ScrollTrigger
-        // above. On desktop --lyra-fadein is never written, so this term is 0
-        // and Story's fadeout remains the sole driver.
-        const lyraFadeinStr = root.style.getPropertyValue("--lyra-fadein");
-        const lyraFadein = lyraFadeinStr ? parseFloat(lyraFadeinStr) : 0;
-        const crossfadeIn = Math.max(
-          storyCrossfade,
-          Number.isFinite(lyraFadein) ? lyraFadein : 0
-        );
+        const crossfadeIn = 1 - (Number.isFinite(storyFadeout) ? storyFadeout : 1);
         const videoFadeOut = ramp(p, TIMING.VIDEO_FADE_OUT[0], TIMING.VIDEO_FADE_OUT[1], 0, 1);
         wrapper.style.setProperty(
           "--video-opacity",
