@@ -6,6 +6,13 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Mobile browsers collapse/expand the URL bar on scroll, which changes the
+// visual viewport height. Without this, every URL-bar transition fires a
+// ScrollTrigger refresh — anchors jump, pinned sections shift, and scrub
+// progress recomputes mid-scroll. Setting it once globally (idempotent) is
+// the documented mitigation. Has no effect on desktop.
+ScrollTrigger.config({ ignoreMobileResize: true });
+
 // Frame sequence — the dust→Lyra transformation is shipped as 151 WebP stills
 // (~7MB total) instead of an H.264 video. The H.264 export had only 6 keyframes
 // across 757 frames, so every scroll-driven `currentTime` write meant decoding
@@ -126,19 +133,16 @@ export default function CogniateLyraReveal() {
   const lastDrawnIdxRef = useRef(-1);
   const progressRef = useRef(0);
 
-  // Preload the frame sequence on mount. Only desktop (non-reduced-motion)
-  // runs the pinned scrub and needs all 151 frames decoded ahead of time.
-  // Mobile + reduced-motion paint the final formed-Lyra frame as a static
-  // destination image, so they fetch a single ~50KB asset instead of ~7MB.
+  // Preload the frame sequence on mount. Reduced-motion only needs the final
+  // frame (static destination image). Otherwise — including mobile — fetch
+  // all 151 frames so the scrub never catches an undecoded frame mid-scroll.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-    const fullPreload = isDesktop && !reduced;
 
-    const indices = fullPreload
-      ? Array.from({ length: FRAME_COUNT }, (_, i) => i)
-      : [FRAME_COUNT - 1];
+    const indices = reduced
+      ? [FRAME_COUNT - 1]
+      : Array.from({ length: FRAME_COUNT }, (_, i) => i);
 
     const frames = framesRef.current;
     for (const i of indices) {
@@ -225,15 +229,11 @@ export default function CogniateLyraReveal() {
       }
 
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      const isMobile = !window.matchMedia("(min-width: 1024px)").matches;
 
-      // Mobile + reduced-motion → no pin, no scrub. Pinned scroll-scrubs are a
-      // desktop affordance (see docs/scroll-scrub-frame-sequence.md) — on
-      // mobile the pin-spacer + URL-bar collapse interplay produces visible
-      // jumps at engage/release, and the 7MB frame preload is unfriendly on
-      // cellular. Both paths paint the final formed-Lyra frame statically and
-      // run the text-stagger GSAP timeline at "top 70%".
-      if (!isDesktop || reduced) {
+      // Reduced motion → no pin, no scrub. Paints the final frame statically
+      // and runs the text-stagger GSAP timeline.
+      if (reduced) {
         const paintFinalFrame = () => {
           const finalImg = framesRef.current[FRAME_COUNT - 1];
           if (finalImg && finalImg.naturalWidth) {
@@ -252,10 +252,38 @@ export default function CogniateLyraReveal() {
         end: TIMING.PIN_DISTANCE,
         pin: true,
         scrub: 1,
+        // On mobile, force transform-based pinning. The default `position:
+        // fixed` pin reflows when iOS/Android collapse the URL bar — visible
+        // as a ~100px jump at pin engage and again at release. `transform`
+        // keeps the wrapper in document flow and translates it instead, so
+        // the URL-bar transition can't shift the pin's reference frame.
+        pinType: isMobile ? "transform" : "fixed",
         onUpdate: (self) => {
           progressRef.current = self.progress;
         },
       });
+
+      // Mobile-only canvas crossfade-in. Desktop uses Story's --story-fadeout
+      // (only updates while Story's pinned scrub is active — desktop-only).
+      // On mobile Story isn't pinned, so we run a deliberate 600ms tween on
+      // the canvas opacity once the section enters the viewport. Decoupling
+      // from scroll position (rather than a scrubbed ramp) means a fast swipe
+      // still shows the fade — the previous scrubbed approach completed
+      // imperceptibly fast on momentum scrolls.
+      if (isMobile) {
+        ScrollTrigger.create({
+          trigger: section,
+          start: "top 80%",
+          once: true,
+          onEnter: () => {
+            gsap.to(document.documentElement, {
+              "--lyra-fadein": 1,
+              duration: 0.6,
+              ease: "power2.out",
+            });
+          },
+        });
+      }
     }, section);
 
     return () => ctx.revert();
@@ -274,8 +302,7 @@ export default function CogniateLyraReveal() {
       new URL(window.location.href).searchParams.has("lyraProgress");
     if (!isTestMode) {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-      if (reduced || !isDesktop) return;
+      if (reduced) return;
     }
 
     let rafId = 0;
@@ -331,7 +358,16 @@ export default function CogniateLyraReveal() {
         // values when both contribute (e.g. test-mode edge cases).
         const storyFadeoutStr = root.style.getPropertyValue("--story-fadeout");
         const storyFadeout = storyFadeoutStr ? parseFloat(storyFadeoutStr) : 1;
-        const crossfadeIn = 1 - (Number.isFinite(storyFadeout) ? storyFadeout : 1);
+        const storyCrossfade = 1 - (Number.isFinite(storyFadeout) ? storyFadeout : 1);
+        // Mobile-only fade-in driven by the section-enter tween above. On
+        // desktop --lyra-fadein is never written, so this term is 0 and
+        // Story's fadeout remains the sole driver.
+        const lyraFadeinStr = root.style.getPropertyValue("--lyra-fadein");
+        const lyraFadein = lyraFadeinStr ? parseFloat(lyraFadeinStr) : 0;
+        const crossfadeIn = Math.max(
+          storyCrossfade,
+          Number.isFinite(lyraFadein) ? lyraFadein : 0
+        );
         const videoFadeOut = ramp(p, TIMING.VIDEO_FADE_OUT[0], TIMING.VIDEO_FADE_OUT[1], 0, 1);
         wrapper.style.setProperty(
           "--video-opacity",
