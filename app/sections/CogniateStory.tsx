@@ -132,6 +132,17 @@ const stories = [
 export default function CogniateStory() {
   const [activeStory, setActiveStory] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Mobile: open the first story tooltip by default so the accordion lands in
+  // its expanded state. Desktop tooltips are gated behind hover + scroll
+  // progress, so this only affects the mobile column. Done in an effect (not a
+  // useState initializer) to avoid a hydration mismatch on the mobile column.
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveStory("problem");
+    }
+  }, []);
   const desktopLayoutRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
   // Pixel offset from the desktop wrapper's centre (= Canvas centre) to the
@@ -305,7 +316,7 @@ export default function CogniateStory() {
     <section
       ref={sectionRef}
       data-testid="cogniate-story-section"
-      className="relative w-full bg-bg-secondary overflow-x-hidden py-20 lg:py-0"
+      className="relative w-full bg-bg-secondary overflow-x-hidden py-5 lg:py-0"
     >
       {/* === DESKTOP LAYOUT — viewport-filling wrapper that gets pinned ===
           Heading + circles live inside this wrapper so they both stay visible

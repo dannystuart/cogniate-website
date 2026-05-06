@@ -149,7 +149,7 @@ export default function HowItWorks() {
       id="how-it-works"
       ref={sectionRef}
       data-testid="how-it-works-section"
-      className="relative w-full bg-[#111112] overflow-hidden pt-20 pb-20 lg:pt-0 lg:pb-[220px] lg:-mt-[30vh]"
+      className="relative w-full bg-[#111112] overflow-hidden lg:pt-0 lg:pb-[220px] lg:-mt-[30vh]"
     >
       {/* ===== BACKGROUND GRID LINES — extends above the top horizontal line and below the bottom one ===== */}
       <div className="absolute inset-x-0 top-[80px] lg:top-[100px] bottom-[60px] lg:bottom-0 mx-auto max-w-[1554px] pointer-events-none">
@@ -312,22 +312,21 @@ export default function HowItWorks() {
       <div className="relative z-10 mx-auto max-w-[1280px] px-5 md:px-6 lg:pt-[263px]">
         {/* HOW IT WORKS eyebrow — tucked right underneath the top horizontal line */}
         <div
-          className="inline-flex items-center justify-center h-[52px] w-[261px] mb-8 lg:mb-16"
+          className="flex mx-auto lg:mx-0 lg:inline-flex items-center justify-center h-[44px] w-[200px] lg:h-[52px] lg:w-[261px] mb-8 lg:mb-16"
           style={{ backgroundColor: "rgba(211,204,255,0.05)" }}
         >
-          <span className="text-[16px] font-medium tracking-[4.8px] text-white/80 whitespace-nowrap">
+          <span className="text-[12px] lg:text-[16px] font-medium tracking-[3.6px] lg:tracking-[4.8px] text-white/80 whitespace-nowrap">
             HOW IT WORKS
           </span>
         </div>
 
         {/* Cards row */}
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-[34px]">
+        <div className="flex flex-col items-center lg:items-stretch lg:flex-row gap-6 lg:gap-[34px]">
           {cards.map((card) => (
             <div
               key={card.id}
-              className="group relative flex-1 rounded-[20px] overflow-hidden"
+              className="group relative w-full max-w-[400px] lg:max-w-none flex-1 rounded-[20px] overflow-hidden min-h-[520px] lg:min-h-[608px]"
               style={{
-                minHeight: 608,
                 boxShadow:
                   "0px 0px 20px 3px rgba(7,13,79,0.05), 0px 0px 40px 20px rgba(7,13,79,0.05)",
               }}
@@ -375,7 +374,7 @@ export default function HowItWorks() {
                       }}
                     />
                   </div>
-                  <h3 className="text-[28px] font-medium text-white leading-tight">
+                  <h3 className="text-[22px] lg:text-[28px] font-medium text-white leading-tight">
                     {card.title}
                   </h3>
                 </div>
@@ -385,7 +384,7 @@ export default function HowItWorks() {
                   {card.descLines.map((line, i) => (
                     <p
                       key={i}
-                      className="text-body-lg leading-[28px] font-normal"
+                      className="text-body lg:text-body-lg leading-[22px] lg:leading-[28px] font-normal"
                       style={{ color: "rgba(244,238,255,0.9)" }}
                     >
                       {line}
@@ -394,18 +393,18 @@ export default function HowItWorks() {
                 </div>
 
                 {/* Italic tagline */}
-                <p className="mt-4 font-serif italic text-[24px] leading-[25.6px] text-accent-coral">
+                <p className="mt-4 font-serif italic text-[20px] lg:text-[24px] leading-[1.2] lg:leading-[25.6px] text-accent-coral">
                   {card.tagline}
                 </p>
               </div>
 
               {/* Card image — bottom, scales on hover */}
-              <div className="absolute bottom-0 left-0 right-0 h-[60%] overflow-hidden">
+              <div className="absolute bottom-0 left-0 right-0 h-[68%] lg:h-[60%] overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={card.image}
                   alt=""
-                  className="w-full h-full object-cover opacity-40 transform-gpu will-change-transform transition-all duration-[600ms] ease-out group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-2"
+                  className="w-full h-full object-cover opacity-100 lg:opacity-40 transform-gpu will-change-transform transition-all duration-[600ms] ease-out lg:group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-2"
                   draggable={false}
                 />
               </div>

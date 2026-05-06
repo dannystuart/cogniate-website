@@ -261,7 +261,7 @@ function PlatformCard({
         </p>
 
         {/* Feature blocks */}
-        <div className="grid grid-cols-2 gap-5 lg:gap-[27px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-[27px]">
           {card.features.map((feature, i) => (
             <FeatureBlock
               key={i}

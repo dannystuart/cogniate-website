@@ -131,10 +131,10 @@ export default function Signup() {
         />
         {/* Text Block */}
         <div ref={textRef} className="text-center mb-16 md:mb-20 lg:mb-24">
-          <h2 className="italic text-accent-coral text-[48px] md:text-[80px] lg:text-[112px] leading-[1.1] tracking-[-0.04em]" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+          <h2 className="italic text-accent-coral text-[64px] md:text-[80px] lg:text-[112px] leading-[1.1] tracking-[-0.04em]" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
             Be First.
           </h2>
-          <p className="mt-4 md:mt-6 text-[24px] md:text-[48px] lg:text-[64px] font-semibold leading-[1.15] tracking-[-0.04em] heading-gradient">
+          <p className="mt-4 md:mt-6 text-[32px] md:text-[48px] lg:text-[64px] font-semibold leading-[1.15] tracking-[-0.04em] heading-gradient">
             Shape the future into learning.
           </p>
           <p className="mt-4 md:mt-6 text-body md:text-body-lg font-light leading-[1.4] text-text-secondary max-w-[640px] mx-auto">

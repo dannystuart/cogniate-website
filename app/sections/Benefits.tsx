@@ -12,7 +12,7 @@ const benefits = [
         From 154 hours to under 60 minutes.
         <br />
         Course creation at the{" "}
-        <span className="font-serif italic text-[24px] md:text-[28px] tracking-[-0.28px] bg-clip-text text-transparent benefits-italic-gradient">
+        <span className="font-serif italic text-[20px] lg:text-[28px] tracking-[-0.28px] bg-clip-text text-transparent benefits-italic-gradient">
           speed of thought.
         </span>
       </>
@@ -112,11 +112,12 @@ export default function Benefits() {
                 ${index < benefits.length - 1 ? "border-b border-white/[0.06] md:border-b-0" : ""}
               `}
             >
-              {/* Icon */}
+              {/* Icon — plain <img> so SVGs are not rasterized by next/image */}
               <div className="relative w-[60px] h-[60px] shrink-0">
                 {benefit.hasCircleBg ? (
                   <>
-                    <Image
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src="/assets/benefits-icon-circle.svg"
                       alt=""
                       width={60}
@@ -124,7 +125,8 @@ export default function Benefits() {
                       className="absolute inset-0"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Image
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={benefit.icon}
                         alt=""
                         width={benefit.iconSize}
@@ -135,7 +137,8 @@ export default function Benefits() {
                   </>
                 ) : (
                   <div className="relative w-[90px] h-[90px] -m-[15px]">
-                    <Image
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src={benefit.icon}
                       alt=""
                       width={90}
@@ -151,7 +154,13 @@ export default function Benefits() {
               </h3>
 
               {/* Description */}
-              <p className="text-white/80 text-body md:text-body-lg font-light leading-[1.3] tracking-[-0.2px] max-w-[430px]">
+              <p
+                className={`text-white/80 text-body lg:text-body-lg font-light tracking-[-0.2px] max-w-[430px] ${
+                  index === 0
+                    ? "leading-[1.3] md:leading-[1.1]"
+                    : "leading-[1.3] md:leading-[1.4]"
+                }`}
+              >
                 {benefit.description}
               </p>
             </div>

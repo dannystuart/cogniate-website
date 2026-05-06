@@ -33,10 +33,10 @@
   --font-mono: var(--font-geist-mono), monospace;
 
   /* Typography sizes — three breakpoints */
-  --text-h1-mobile: 32px;
+  --text-h1-mobile: 48px;
   --text-h1-tablet: 52px;
   --text-h1-desktop: 68px;
-  --text-h1-italic-mobile: 40px;
+  --text-h1-italic-mobile: 56px;
   --text-h1-italic-tablet: 64px;
   --text-h1-italic-desktop: 88px;
   --text-h2-mobile: 32px;

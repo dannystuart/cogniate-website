@@ -22,7 +22,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section id="hero" className="relative w-full overflow-hidden bg-bg-primary" style={{ minHeight: "max(100vh, 1000px)" }}>
+    <section id="hero" className="relative w-full overflow-hidden bg-bg-primary lg:min-h-[max(100vh,1000px)]">
       {/* ===== BACKGROUND LAYERS (absolute) ===== */}
 
       {/* Unicorn Studio Background */}
@@ -98,7 +98,7 @@ export default function Hero() {
 
       {/* ===== CONTENT (auto layout) ===== */}
       <div
-        className={`relative z-10 flex flex-col items-center pt-[220px] lg:pt-[280px] pb-[160px] lg:pb-[240px] px-5 md:px-6 mx-auto max-w-[1330px] transition-opacity duration-700 ease-out ${revealed ? "opacity-100" : "opacity-0"}`}
+        className={`relative z-10 flex flex-col items-center pt-[140px] lg:pt-[280px] pb-[40px] lg:pb-[240px] px-5 md:px-6 mx-auto max-w-[1330px] transition-opacity duration-700 ease-out ${revealed ? "opacity-100" : "opacity-0"}`}
       >
         {/* Eyebrow */}
         <EyebrowBadge>AI POWERED COURSE CREATOR</EyebrowBadge>
@@ -132,7 +132,7 @@ export default function Hero() {
           </div>
 
           {/* CTA Group */}
-          <div className="flex flex-col sm:flex-row gap-3 lg:gap-5 items-center sm:items-start w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-6 lg:gap-5 items-center sm:items-start w-full sm:w-auto">
             <ButtonPrimary
               className="w-full sm:w-auto"
               onClick={() => openFormModal("book-a-demo")}
